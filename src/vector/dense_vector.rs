@@ -4,94 +4,159 @@
 use std::cmp;
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
+use std::ops::Range;
+use std::mem;
 
 use super::{Vector, KeyType, RationalType};
 use crate::coefficients::{CoefficientField};
-use crate::basis::{OrderedBasis};
-use crate::DimensionType;
+use crate::basis::{OrderedBasis, OrderedBasisWithDegree};
+use crate::{DimensionType, DegreeType};
+use crate::vector::VectorWithDegree;
 
 
 
-pub struct OwnedDenseVector<B: OrderedBasis, S: CoefficientField>(Vec<S>, PhantomData<B>);
 
-impl<B, S> Clone for OwnedDenseVector<B, S>
+enum SimpleDenseVectorData<'a, S: CoefficientField>
+{
+    Owned(Vec<S>),
+    Borrowed(&'a [S]),
+    BorrowedMut(&'a mut [S])
+}
+use SimpleDenseVectorData::*;
+
+pub struct SimpleDenseVector<'a, B: OrderedBasis, S: CoefficientField>(
+    SimpleDenseVectorData<'a, S>, PhantomData<B>
+);
+
+
+impl<'a, B, S> Clone for SimpleDenseVector<'a, B, S>
     where B: OrderedBasis, S: CoefficientField
 {
     fn clone(&self) -> Self
     {
-        Self(self.0.clone(), PhantomData)
+        Self(match &self.0 {
+            Owned(v) => Owned(v.clone()),
+            Borrowed(v) => Owned(v.to_vec()),
+            BorrowedMut(v) => Owned(v.to_vec())
+        }, PhantomData)
     }
 }
 
-impl<B, S> AsRef<OwnedDenseVector<B, S>> for OwnedDenseVector<B, S>
-    where B: OrderedBasis, S: CoefficientField
-{
-    fn as_ref(&self) -> &OwnedDenseVector<B, S> {
-        self
-    }
-}
 
-impl<B, S> AsMut<OwnedDenseVector<B, S>> for OwnedDenseVector<B ,S>
-    where B: OrderedBasis, S: CoefficientField
-{
-    fn as_mut(&mut self) -> &mut OwnedDenseVector<B, S> { self }
-}
+impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
 
-
-impl<B: OrderedBasis, S: CoefficientField> OwnedDenseVector<B, S> {
-
-    pub fn new() -> OwnedDenseVector<B, S>
+    pub fn new() -> SimpleDenseVector<'a, B, S>
     {
-        OwnedDenseVector(Vec::new(), PhantomData)
+        SimpleDenseVector(Owned(Vec::new()), PhantomData)
     }
 
-    pub fn from(vec: Vec<S>) -> OwnedDenseVector<B, S>
+    pub fn from(vec: Vec<S>) -> SimpleDenseVector<'a, B, S>
     {
-        OwnedDenseVector(vec, PhantomData)
+        SimpleDenseVector(Owned(vec), PhantomData)
     }
 
-    pub fn from_dimension(size: DimensionType) -> OwnedDenseVector<B, S>
+    pub fn from_dimension(size: DimensionType) -> SimpleDenseVector<'a, B, S>
     {
-        OwnedDenseVector(vec![S::ZERO; size], PhantomData)
+        SimpleDenseVector(Owned(vec![S::ZERO; size]), PhantomData)
+    }
+
+    fn to_owned_with_size(&mut self, resize: Option<DimensionType>)
+    {
+        let sz = resize.unwrap_or(self.size());
+        let mut new_vec = Vec::with_capacity(sz);
+
+        match self.0 {
+            Borrowed(ref v) => new_vec.extend_from_slice(v),
+            BorrowedMut(ref v) => new_vec.extend_from_slice(v),
+            Owned(_) => unreachable!()
+        }
+
+        if let Some(dim) = resize {
+            new_vec.resize(dim, S::ZERO);
+        }
+
+
+        self.0 = Owned(new_vec)
+        //let old = mem::replace(&mut self.0, Owned(new_vec));
     }
 
     pub fn resize(&mut self, size: DimensionType)
     {
-        self.0.resize(size, S::ZERO);
+        match &mut self.0 {
+            Owned(v) => v.resize(size, S::ZERO),
+            BorrowedMut(_) | Borrowed(_) => Self::to_owned_with_size(self, Some(size))
+        }
+    }
+
+    pub fn size(&self) -> DimensionType
+    {
+        match &self.0 {
+            Owned(v) => v.len(),
+            BorrowedMut(v) => v.len(),
+            Borrowed(v) => v.len()
+        }
     }
 
 }
 
 
-impl<B, S> Vector for OwnedDenseVector<B, S>
+impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
+
+    pub(crate) fn as_slice(&self) -> &[S]
+    {
+        match &self.0 {
+            Owned(v) => v,
+            Borrowed(v) => *v,
+            BorrowedMut(v) => *v
+        }
+    }
+
+    pub(crate) fn as_mut_slice(&mut self) -> &mut [S]
+    {
+
+        if let Borrowed(v) = self.0 {
+            self.0 = Owned(v.to_vec());
+        }
+
+        match &mut self.0 {
+            Owned(v) => v,
+            BorrowedMut(v) => *v,
+            Borrowed(_) => unreachable!()
+        }
+    }
+
+}
+
+
+impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
     where B: OrderedBasis,
           S: CoefficientField
 {
     type BasisType = B;
     type ScalarFieldType = S;
-    type OwnedVectorType = Self;
 
-    fn new() -> Self::OwnedVectorType {
-        Self::OwnedVectorType::new()
+    fn new() -> Self {
+        Self::new()
     }
 
-    fn from_key(key: impl Into<KeyType<Self>>) -> Self::OwnedVectorType {
+    fn from_key(key: impl Into<KeyType<Self>>) -> Self {
         Self::from_key_scalar(key, Self::ScalarFieldType::ONE)
     }
 
-    fn from_key_scalar(key: impl Into<KeyType<Self>>, scalar: impl Into<Self::ScalarFieldType>) -> Self::OwnedVectorType {
+    fn from_key_scalar(key: impl Into<KeyType<Self>>, scalar: impl Into<Self::ScalarFieldType>) -> Self {
         let k = key.into();
         let size = Self::BasisType::vector_dimension_for_key(&k);
         let mut new_vect = Self::from_dimension(size);
         unsafe {
             // We have just created the vector to have at least size+1 elements
             // So this is safe
-            *new_vect.0.get_unchecked_mut(Self::BasisType::key_to_index(&k)) = scalar.into();
+            *new_vect.as_mut_slice()
+                .get_unchecked_mut(Self::BasisType::key_to_index(&k)) = scalar.into();
         }
         new_vect
     }
 
-    fn from_iterator(iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) -> Self::OwnedVectorType {
+    fn from_iterator(iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) -> Self {
         let mut vec: Vec<(DimensionType, Self::ScalarFieldType)> = iterator.into_iter()
             .map(|(k, s)| { (Self::BasisType::key_to_index(&k), s) })
             .collect();
@@ -108,7 +173,7 @@ impl<B, S> Vector for OwnedDenseVector<B, S>
         // We have just created a vector large enough to accomodate all these indices.
         unsafe {
             for (i, v) in vec.into_iter() {
-                Self::ScalarFieldType::add_inplace(result.0.get_unchecked_mut(i), &v);
+                Self::ScalarFieldType::add_inplace(result.as_mut_slice().get_unchecked_mut(i), &v);
             }
         }
 
@@ -119,21 +184,24 @@ impl<B, S> Vector for OwnedDenseVector<B, S>
         todo!()
     }
 
-    fn to_owned(&self) -> Self::OwnedVectorType {
-        Self::from(self.0.clone())
+    fn to_owned(&self) -> Self {
+        Self::from(Vec::from(self.as_slice()))
     }
 
     fn clear(&mut self) {
-        self.0.clear();
+        match &mut self.0 {
+            Owned(v) => v.clear(),
+            BorrowedMut(v) => {v.fill(S::ZERO)},
+            Borrowed(_) => self.0 = Owned(Vec::new())
+        };
     }
 
     fn get(&self, key: impl AsRef<KeyType<Self>>) -> Option<&Self::ScalarFieldType> {
-        self.0.get(B::key_to_index(key.as_ref()))
+        self.as_slice().get(B::key_to_index(key.as_ref()))
     }
 
-    fn get_mut(&mut self, key: impl AsRef<KeyType<Self>>) -> &mut Self::ScalarFieldType {
-        self.0.get_mut(B::key_to_index(key.as_ref()))
-            .expect("Requested key is not present in this vector")
+    fn get_mut(&mut self, key: impl AsRef<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
+        self.as_mut_slice().get_mut(B::key_to_index(key.as_ref()))
     }
 
     fn insert_single(&mut self, key: impl AsRef<KeyType<Self>>, value: impl Into<Self::ScalarFieldType>) {
@@ -150,7 +218,7 @@ impl<B, S> Vector for OwnedDenseVector<B, S>
     }
 
     fn uminus_inplace(&mut self) -> &mut Self {
-        for val in self.0.iter_mut() {
+        for val in self.as_mut_slice() {
             *val = Self::ScalarFieldType::uminus(val);
         }
         self
@@ -159,11 +227,15 @@ impl<B, S> Vector for OwnedDenseVector<B, S>
     fn add_inplace(&mut self, other: impl Borrow<Self>) -> &mut Self {
         let lhs_vec = other.borrow();
 
-        if lhs_vec.0.len() > self.0.len() {
-            panic!("The size of the right hand side is larger than the left hand side")
+        if let Borrowed(v) = self.0 {
+            self.0 = Owned(v.to_vec());
         }
 
-        for (lhs,rhs) in self.0.iter_mut().zip(&lhs_vec.0) {
+        if lhs_vec.size() > self.size() {
+            self.resize(lhs_vec.size());
+        }
+
+        for (lhs, rhs) in self.as_mut_slice().iter_mut().zip(lhs_vec.as_slice()) {
             Self::ScalarFieldType::add_inplace(lhs, rhs);
         }
 
@@ -173,11 +245,11 @@ impl<B, S> Vector for OwnedDenseVector<B, S>
     fn sub_inplace(&mut self, other: impl Borrow<Self>) -> &mut Self {
         let lhs_vec = other.borrow();
 
-        if lhs_vec.0.len() > self.0.len() {
-            panic!("The size of the right hand side is larger than the left hand side")
+        if lhs_vec.size() > self.size() {
+            self.resize(lhs_vec.size());
         }
 
-        for (lhs,rhs) in self.0.iter_mut().zip(&lhs_vec.0) {
+        for (lhs, rhs) in self.as_mut_slice().iter_mut().zip(lhs_vec.as_slice()) {
             Self::ScalarFieldType::sub_inplace(lhs, rhs);
         }
 
@@ -187,7 +259,11 @@ impl<B, S> Vector for OwnedDenseVector<B, S>
     fn scalar_lmultiply_inplace(&mut self, scalar: impl Into<Self::ScalarFieldType>) -> &mut Self {
         let val = scalar.into();
 
-        for lhs in self.0.iter_mut() {
+        if let Borrowed(v) = self.0 {
+            self.0 = Owned(v.to_vec());
+        }
+
+        for lhs in self.as_mut_slice() {
             Self::ScalarFieldType::mul_inplace(lhs, &val);
         }
 
@@ -197,12 +273,28 @@ impl<B, S> Vector for OwnedDenseVector<B, S>
     fn scalar_rdivide_inplace(&mut self, rational: impl Into<RationalType<Self>>) -> &mut Self {
         let val = rational.into();
 
-        for lhs in self.0.iter_mut() {
+        for lhs in self.as_mut_slice() {
             Self::ScalarFieldType::div_inplace(lhs, &val);
         }
 
         self
     }
+}
+
+
+impl<'a, B, S> VectorWithDegree for SimpleDenseVector<'a, B, S>
+    where B: OrderedBasisWithDegree,
+          S: CoefficientField
+{
+    fn degree(&self) -> DegreeType {
+        let size = self.size();
+        match self.size() {
+            i if i == 0 => 0,
+            i => <B as OrderedBasisWithDegree>::index_to_degree(i - 1)
+        }
+
+    }
+
 }
 
 
@@ -224,17 +316,15 @@ mod tests {
     impl OrderedBasis for IntegerBasis
     {
 
+        type KeyIterator = Range<Self::KeyType>;
+
         fn compare(lhs: &Self::KeyType, rhs: &Self::KeyType) -> Ordering
         {
             cmp::Ord::cmp(lhs, rhs)
         }
 
-        fn first_key() -> Self::KeyType {
-            0
-        }
-
-        fn next_key(key: &Self::KeyType) -> Self::KeyType {
-            key + 1
+        fn iter_keys() -> Self::KeyIterator {
+            todo!()
         }
 
         fn key_to_index(key: &Self::KeyType) -> DimensionType {
@@ -258,14 +348,9 @@ mod tests {
     }
 
 
-    type DenseVec = OwnedDenseVector<IntegerBasis, f32>;
+    type DenseVec<'a> = SimpleDenseVector<'a, IntegerBasis, f32>;
 
-    #[test]
-    fn test_create_empty() {
-        let vec = DenseVec::new();
 
-        assert_eq!(vec.0, vec![]);
-    }
 
     #[test]
     fn test_create_from_iterator() {
@@ -279,7 +364,7 @@ mod tests {
 
         let result = DenseVec::from_iterator(buffer);
 
-        assert_eq!(result.0, expected.0);
+        assert_eq!(result.as_slice(), expected.as_slice());
     }
 
     #[test]
@@ -294,7 +379,7 @@ mod tests {
 
         let result = DenseVec::from_iterator(buffer);
 
-        assert_eq!(result.0, expected.0);
+        assert_eq!(result.as_slice(), expected.as_slice());
     }
 
     #[test]
@@ -309,7 +394,7 @@ mod tests {
 
         let result = DenseVec::from_iterator(buffer);
 
-        assert_eq!(result.0, expected.0);
+        assert_eq!(result.as_slice(), expected.as_slice());
     }
 
     #[test]
@@ -326,7 +411,7 @@ mod tests {
 
         let result = v1.add(v2);
 
-        assert_eq!(result.0, expected.0);
+        assert_eq!(result.as_slice(), expected.as_slice());
     }
 
     #[test]
@@ -343,7 +428,7 @@ mod tests {
 
         let result = v1.sub(v2);
 
-        assert_eq!(result.0, expected.0);
+        assert_eq!(result.as_slice(), expected.as_slice());
     }
 
     #[test]
@@ -364,7 +449,7 @@ mod tests {
 
         let result = v1.scalar_lmultiply(2.0f32);
 
-        assert_eq!(result.0, expected.0);
+        assert_eq!(result.as_slice(), expected.as_slice());
     }
 
 

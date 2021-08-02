@@ -1,4 +1,4 @@
-mod tensor_basis;
+pub mod tensor_basis;
 
 use std::cmp::{PartialEq, Ordering};
 use std::convert::Into;
@@ -14,12 +14,11 @@ pub trait Basis
 
 pub trait OrderedBasis : Basis
 {
+    type KeyIterator: Iterator;
 
     fn compare(lhs: &Self::KeyType, rhs: &Self::KeyType) -> Ordering;
 
-    fn first_key() -> Self::KeyType;
-
-    fn next_key(key: &Self::KeyType) -> Self::KeyType;
+    fn iter_keys() -> Self::KeyIterator;
 
     fn key_to_index(key: &Self::KeyType) -> DimensionType;
 
@@ -38,5 +37,11 @@ pub trait BasisWithDegree : Basis
 }
 
 
+pub trait OrderedBasisWithDegree : OrderedBasis + BasisWithDegree
+{
+    fn index_to_degree(index: DimensionType) -> DegreeType;
+}
+
 
 pub use tensor_basis::{TensorKey, TensorBasis};
+use std::ops::SubAssign;

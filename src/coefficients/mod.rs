@@ -1,23 +1,29 @@
+use std::cmp::PartialEq;
 
+use crate::DegreeType;
 
 /// Composite trait describing the basic properties that all coefficient-like types should satisfy.
 ///
 /// At the moment, the only restriction is that the `Clone` trait is implemented.
 pub trait CoefficientBase
-    : Clone
+    : Clone + PartialEq
 {}
 
 
 pub trait Commutative
 {}
 
+pub trait FromDegreeType {
 
+    fn from_degree(deg: &DegreeType) -> Self;
+
+}
 
 pub trait CoefficientField
     : CoefficientBase + Commutative
-    + From<i8> + From<i16>
+    + From<i8> + From<i16> + FromDegreeType
 {
-    type RationalType;
+    type RationalType: From<i8> + From<i16> + FromDegreeType;
     const ZERO: Self;
     const ONE: Self;
     const MONE: Self;

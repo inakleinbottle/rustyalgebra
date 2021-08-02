@@ -1,11 +1,25 @@
 
-use super::{CoefficientBase, Commutative, CoefficientField};
+use super::{CoefficientBase, Commutative, CoefficientField, FromDegreeType};
+use crate::DegreeType;
 
 impl CoefficientBase for f32 {}
 impl CoefficientBase for f64 {}
 
 impl Commutative for f32 {}
 impl Commutative for f64 {}
+
+
+impl FromDegreeType for f32 {
+    fn from_degree(deg: &DegreeType) -> Self {
+        *deg as Self
+    }
+}
+
+impl FromDegreeType for f64 {
+    fn from_degree(deg: &DegreeType) -> Self {
+        *deg as Self
+    }
+}
 
 impl CoefficientField for f32
 {

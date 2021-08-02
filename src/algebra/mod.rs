@@ -1,4 +1,7 @@
+
+mod free_tensor;
 mod tensor;
+
 
 use std::borrow::{Borrow, BorrowMut};
 
@@ -31,7 +34,7 @@ pub trait Algebra : Vector {
         &self,
         rhs: impl Borrow<Self>,
         to_degree: Option<DegreeType>
-    ) -> Self::OwnedVectorType
+    ) -> Self
     {
         let mut result = Self::new();
         result.borrow_mut().multiply_and_add_into_impl(self, rhs.borrow(), |v| { v.clone() }, to_degree);
@@ -83,7 +86,7 @@ pub trait Algebra : Vector {
         &self,
         rhs: impl Borrow<Self>,
         to_degree: Option<DegreeType>
-    ) -> Self::OwnedVectorType
+    ) -> Self
     {
         let mut result = Self::new();
         let rhs_borrowed = rhs.borrow();
