@@ -1,11 +1,14 @@
 
 
-
+use std::fmt::{self, Display, Formatter};
 use std::cmp;
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
-use std::ops::Range;
+use std::ops::{Range, Index};
 use std::mem;
+use std::slice::SliceIndex;
+
+
 
 use super::{Vector, KeyType, RationalType};
 use crate::coefficients::{CoefficientField};
@@ -14,8 +17,31 @@ use crate::{DimensionType, DegreeType};
 use crate::vector::VectorWithDegree;
 
 
+/// A dense vector should provide slice-like views into the underlying data
+/// in the vector. As such, the data should be stored contiguously in memory.
+pub trait DenseVector : Vector
+{
+
+    fn as_slice(&self) -> &[Self::ScalarFieldType];
+
+    fn as_mut_slice(&mut self) -> &mut [Self::ScalarFieldType];
+
+    fn get_slice<I>(&self, index: I) -> Option<&I::Output>
+        where I: SliceIndex<[Self::ScalarFieldType]>
+    {
+        self.as_slice().get(index)
+    }
+
+    fn get_mut_slice<I>(&mut self, index: I) -> Option<&mut I::Output>
+        where I: SliceIndex<[Self::ScalarFieldType]>
+    {
+        self.as_mut_slice().get_mut(index)
+    }
+
+}
 
 
+#[derive(Debug)]
 enum SimpleDenseVectorData<'a, S: CoefficientField>
 {
     Owned(Vec<S>),
@@ -24,6 +50,8 @@ enum SimpleDenseVectorData<'a, S: CoefficientField>
 }
 use SimpleDenseVectorData::*;
 
+
+#[derive(Debug)]
 pub struct SimpleDenseVector<'a, B: OrderedBasis, S: CoefficientField>(
     SimpleDenseVectorData<'a, S>, PhantomData<B>
 );
@@ -59,6 +87,8 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
     {
         SimpleDenseVector(Owned(vec![S::ZERO; size]), PhantomData)
     }
+
+
 
     fn to_owned_with_size(&mut self, resize: Option<DimensionType>)
     {
@@ -184,6 +214,11 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         todo!()
     }
 
+    fn check_equal(&self, other: impl Borrow<Self>) -> bool {
+        self.as_slice() == other.borrow().as_slice()
+    }
+
+
     fn to_owned(&self) -> Self {
         Self::from(Vec::from(self.as_slice()))
     }
@@ -282,6 +317,32 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
 }
 
 
+impl<'a, B, S> DenseVector for SimpleDenseVector<'a, B, S>
+    where B: OrderedBasis,
+          S: CoefficientField
+{
+    fn as_slice(&self) -> &[Self::ScalarFieldType] {
+        match &self.0 {
+            Owned(v) => v,
+            Borrowed(v) => *v,
+            BorrowedMut(v) => *v
+        }
+    }
+
+    fn as_mut_slice(&mut self) -> &mut [Self::ScalarFieldType] {
+        if let Borrowed(v) = self.0 {
+            self.0 = Owned(v.to_vec());
+        }
+
+        match &mut self.0 {
+            Owned(v) => v,
+            BorrowedMut(v) => *v,
+            Borrowed(_) => unreachable!()
+        }
+    }
+}
+
+
 impl<'a, B, S> VectorWithDegree for SimpleDenseVector<'a, B, S>
     where B: OrderedBasisWithDegree,
           S: CoefficientField
@@ -295,6 +356,19 @@ impl<'a, B, S> VectorWithDegree for SimpleDenseVector<'a, B, S>
 
     }
 
+}
+
+impl<'a, B, S, K> Display for SimpleDenseVector<'a, B, S>
+    where B: OrderedBasis<KeyType = K>,
+          S: CoefficientField + Display,
+          K: Display
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for (k, v) in B::iter_keys().zip(self.as_slice())  {
+            write!(f, "{}{}", v, k)?;
+        }
+        Ok(())
+    }
 }
 
 

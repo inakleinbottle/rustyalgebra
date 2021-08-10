@@ -8,8 +8,8 @@ use crate::coefficients::{CoefficientField};
 use crate::basis::{Basis};
 
 
-pub(crate) type KeyType<V> = <<V as Vector>::BasisType as Basis>::KeyType;
-pub(crate) type RationalType<V> = <<V as Vector>::ScalarFieldType as CoefficientField>::RationalType;
+pub type KeyType<V> = <<V as Vector>::BasisType as Basis>::KeyType;
+pub type RationalType<V> = <<V as Vector>::ScalarFieldType as CoefficientField>::RationalType;
 
 
 pub trait Vector : Sized
@@ -24,6 +24,8 @@ pub trait Vector : Sized
     fn from_iterator(iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) -> Self;
 
     fn swap(&mut self, other: impl BorrowMut<Self>);
+
+     fn check_equal(&self, other: impl Borrow<Self>) -> bool;
 
     // To owned type method
     fn to_owned(&self) -> Self;
@@ -165,5 +167,14 @@ pub trait VectorWithDegree
 
 
 
+
+
+
+
+
 pub mod dense_vector;
 mod deref_impl;
+mod wrapper;
+
+
+pub use wrapper::VectorWrapper;

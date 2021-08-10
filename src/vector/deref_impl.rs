@@ -34,6 +34,11 @@ impl<U, V> Vector for V
         todo!()
     }
 
+    fn check_equal(&self, other: impl Borrow<Self>) -> bool {
+        todo!()
+    }
+
+
     fn to_owned(&self) -> Self {
         todo!()
     }

@@ -13,7 +13,7 @@ pub use tensor_key::{TensorKey, TensorKeyIterator};
 use tensor_key::{const_logn, make_mask};
 use crate::basis::tensor_basis::key_iterator::TensorBasisIterator;
 
-
+#[derive(Debug)]
 pub struct TensorBasis<const NLETTERS: DegreeType>;
 
 impl<const NLETTERS: DegreeType> TensorBasis<NLETTERS> {

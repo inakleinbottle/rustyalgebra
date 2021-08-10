@@ -14,7 +14,7 @@ pub trait Basis
 
 pub trait OrderedBasis : Basis
 {
-    type KeyIterator: Iterator;
+    type KeyIterator: Iterator<Item = Self::KeyType>;
 
     fn compare(lhs: &Self::KeyType, rhs: &Self::KeyType) -> Ordering;
 
