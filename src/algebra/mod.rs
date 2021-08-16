@@ -1,17 +1,16 @@
-
-mod free_tensor;
-mod tensor;
-
-
 use std::borrow::{Borrow, BorrowMut};
 
+
+use crate::vector::{ScalarField};
+
 use crate::basis::Basis;
-use crate::vector::Vector;
-use crate::DegreeType;
 use crate::coefficients::CoefficientField;
+use crate::DegreeType;
+use crate::vector::Vector;
 
 
-type ScalarField<V> = <V as Vector>::ScalarFieldType;
+
+
 
 pub trait Algebra : Vector {
 

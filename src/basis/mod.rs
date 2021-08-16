@@ -1,14 +1,13 @@
-pub mod tensor_basis;
 
 use std::cmp::{PartialEq, Ordering};
 use std::convert::Into;
-
+use std::fmt::Display;
 
 use crate::{DegreeType, DimensionType, LetterType};
 
 pub trait Basis
 {
-    type KeyType: PartialEq;
+    type KeyType: PartialEq + Display;
 }
 
 
@@ -41,7 +40,3 @@ pub trait OrderedBasisWithDegree : OrderedBasis + BasisWithDegree
 {
     fn index_to_degree(index: DimensionType) -> DegreeType;
 }
-
-
-pub use tensor_basis::{TensorKey, TensorBasis};
-use std::ops::SubAssign;

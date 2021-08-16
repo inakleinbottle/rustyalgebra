@@ -7,11 +7,14 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::iter::{Iterator};
 use std::ops::Range;
 
-use super::{Basis, BasisWithDegree, OrderedBasis, OrderedBasisWithDegree};
+use crate::basis::{Basis, BasisWithDegree, OrderedBasis, OrderedBasisWithDegree};
 use crate::{DimensionType, DegreeType, LetterType};
+
+
 pub use tensor_key::{TensorKey, TensorKeyIterator};
+pub use key_iterator::TensorBasisIterator;
+
 use tensor_key::{const_logn, make_mask};
-use crate::basis::tensor_basis::key_iterator::TensorBasisIterator;
 
 #[derive(Debug)]
 pub struct TensorBasis<const NLETTERS: DegreeType>;

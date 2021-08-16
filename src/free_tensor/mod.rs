@@ -1,16 +1,21 @@
+
 mod conversions;
 mod implementation;
+mod tensor_basis;
 
 use std::borrow::{Borrow, BorrowMut};
 
-use crate::coefficients::{CoefficientField, FromDegreeType};
-use crate::basis::{Basis, TensorBasis, TensorKey};
-use crate::vector::{Vector, KeyType, RationalType};
 
-
-use super::Algebra;
 use crate::DegreeType;
-use crate::algebra::ScalarField;
+use crate::algebra::Algebra;
+use crate::coefficients::{CoefficientField, FromDegreeType};
+use crate::basis::{Basis};
+use crate::vector::{Vector, KeyType, RationalType, ScalarField};
+
+
+
+pub use tensor_basis::{TensorKey, TensorBasis, TensorKeyIterator};
+pub use implementation::DenseTensor;
 
 
 pub trait FreeTensor<const NLETTERS: DegreeType> : Algebra<BasisType=TensorBasis<{ NLETTERS }>> {
@@ -74,3 +79,6 @@ pub trait FreeTensor<const NLETTERS: DegreeType> : Algebra<BasisType=TensorBasis
     }
 
 }
+
+
+

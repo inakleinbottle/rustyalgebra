@@ -5,17 +5,18 @@ use std::ops::{Deref, DerefMut};
 use std::cmp;
 
 
-use crate::algebra::{Algebra, ScalarField};
-use crate::algebra::free_tensor::FreeTensor;
+use crate::DegreeType;
+use crate::algebra::{Algebra};
+use crate::free_tensor::FreeTensor;
 use crate::coefficients::CoefficientField;
 use crate::basis::Basis;
-use crate::basis::tensor_basis::{TensorBasis, TensorKey, TensorKeyIterator};
-use crate::vector::{Vector, VectorWithDegree};
-use crate::vector::dense_vector::SimpleDenseVector;
-use crate::DegreeType;
+use crate::vector::{Vector, VectorWithDegree, ScalarField};
+use crate::vector::SimpleDenseVector;
+
+use super::super::{TensorBasis, TensorKey, TensorKeyIterator};
 
 
-
+#[derive(PartialEq)]
 pub struct DenseTensor<
     'a,
     S: CoefficientField,

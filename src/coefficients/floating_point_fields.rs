@@ -28,41 +28,42 @@ impl CoefficientField for f32
     const ONE: f32 = 1.0f32;
     const MONE: f32 = -1.0f32;
 
+    #[inline(always)]
     fn uminus(&self) -> Self {
         -(*self)
     }
-
+    #[inline(always)]
     fn add(&self, other: &Self) -> Self {
         self + other
     }
-
+    #[inline(always)]
     fn sub(&self, other: &Self) -> Self {
         self - other
     }
-
+    #[inline(always)]
     fn mul(&self, other: &Self) -> Self {
         self * other
     }
-
+    #[inline(always)]
     fn div(&self, other: &Self::RationalType) -> Self {
         self / other
     }
-
+    #[inline(always)]
     fn add_inplace(&mut self, other: &Self) -> &mut Self {
         *self += other;
         self
     }
-
+    #[inline(always)]
     fn sub_inplace(&mut self, other: &Self) -> &mut Self {
         *self -= other;
         self
     }
-
+    #[inline(always)]
     fn mul_inplace(&mut self, other: &Self) -> &mut Self {
         *self *= other;
         self
     }
-
+    #[inline(always)]
     fn div_inplace(&mut self, other: &Self::RationalType) -> &mut Self {
         *self /= other;
         self
@@ -77,42 +78,42 @@ impl CoefficientField for f64
     const ZERO: f64 = 0.0f64;
     const ONE: f64 = 1.0f64;
     const MONE: f64 = -1.0f64;
-
+    #[inline(always)]
     fn uminus(&self) -> Self {
         -(*self)
     }
-
+    #[inline(always)]
     fn add(&self, other: &Self) -> Self {
         self + other
     }
-
+    #[inline(always)]
     fn sub(&self, other: &Self) -> Self {
         self - other
     }
-
+    #[inline(always)]
     fn mul(&self, other: &Self) -> Self {
         self * other
     }
-
+    #[inline(always)]
     fn div(&self, other: &Self::RationalType) -> Self {
         self / other
     }
-
+    #[inline(always)]
     fn add_inplace(&mut self, other: &Self) -> &mut Self {
         *self += other;
         self
     }
-
+    #[inline(always)]
     fn sub_inplace(&mut self, other: &Self) -> &mut Self {
         *self -= other;
         self
     }
-
+    #[inline(always)]
     fn mul_inplace(&mut self, other: &Self) -> &mut Self {
         *self *= other;
         self
     }
-
+    #[inline(always)]
     fn div_inplace(&mut self, other: &Self::RationalType) -> &mut Self {
         *self /= other;
         self

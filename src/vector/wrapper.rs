@@ -7,7 +7,7 @@ use crate::coefficients::CoefficientField;
 
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct VectorWrapper<V>(V)
     where V: 'static + Vector;
 
@@ -95,13 +95,6 @@ impl<V, S> ops::Mul<S> for &VectorWrapper<V>
     }
 }
 
-impl<V> PartialEq for VectorWrapper<V>
-    where V: 'static + Vector
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.0.check_equal(&other.0)
-    }
-}
 
 
 impl<V, I> From<I> for VectorWrapper<V>
@@ -119,8 +112,8 @@ mod tests {
 
     use super::*;
 
-    use crate::basis::tensor_basis::{TensorBasis, TensorKey};
-    use crate::vector::dense_vector::SimpleDenseVector;
+    use crate::free_tensor::{TensorBasis, TensorKey};
+    use crate::vector::SimpleDenseVector;
 
     type TKey = TensorKey<2>;
     type Vect<'a> = VectorWrapper<SimpleDenseVector<'a, TensorBasis<2>, f64>>;

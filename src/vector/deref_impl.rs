@@ -7,11 +7,12 @@ use super::*;
 
 
 impl<U, V> Vector for V
-    where V: Deref<Target=U> + DerefMut<Target=U> + From<U>,
+    where V: Deref<Target=U> + DerefMut<Target=U> + From<U> + PartialEq,
           U: Vector
 {
     type BasisType = U::BasisType;
     type ScalarFieldType = U::ScalarFieldType;
+    //type IteratorType = U::IteratorType;
 
     fn new() -> Self
     {
@@ -34,11 +35,6 @@ impl<U, V> Vector for V
         todo!()
     }
 
-    fn check_equal(&self, other: impl Borrow<Self>) -> bool {
-        todo!()
-    }
-
-
     fn to_owned(&self) -> Self {
         todo!()
     }
@@ -55,7 +51,7 @@ impl<U, V> Vector for V
         todo!()
     }
 
-    fn insert_single(&mut self, key: impl AsRef<KeyType<Self>>, value: impl Into<Self::ScalarFieldType>) {
+    fn insert_single(&mut self, key: impl Into<KeyType<Self>>, value: impl Into<Self::ScalarFieldType>) {
         todo!()
     }
 
@@ -66,7 +62,11 @@ impl<U, V> Vector for V
     fn erase(&mut self, key: impl AsRef<KeyType<Self>>) {
         todo!()
     }
-
+/*
+    fn iter_pairs(&self) -> Self::IteratorType {
+        self.borrow().iter_pairs()
+    }
+*/
     fn uminus_inplace(&mut self) -> &mut Self {
         todo!()
     }
