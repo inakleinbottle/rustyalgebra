@@ -2,6 +2,7 @@
 use std::slice::SliceIndex;
 
 use super::Vector;
+use crate::DimensionType;
 
 
 /// Trait describing a dense vector type.
@@ -26,5 +27,14 @@ pub trait DenseVector : Vector
     {
         self.as_mut_slice().get_mut(index)
     }
+
+}
+
+
+
+pub trait ResizeableDenseVector : DenseVector
+{
+
+    fn resize(&mut self, new_dim: DimensionType);
 
 }

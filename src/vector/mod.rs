@@ -197,21 +197,29 @@ pub trait Vector : Sized + PartialEq
 
 
 
-pub trait VectorWithDegree<B> : Vector<BasisType=B>
-    where B: BasisWithDegree
+pub trait VectorWithDegree : Vector
+    where <Self as Vector>::BasisType: BasisWithDegree
 {
 
-    fn degree(&self) -> DegreeType
-    /*{
-        match self.iter_pairs().map(|(k, _)| {B::degree(&k)}).max() {
-            Some(v) => v,
-            None => 0
-        }
-    }*/;
+    fn degree(&self) -> DegreeType;
 
 }
 
-
+impl<V> VectorWithDegree for V
+    where V: Vector,
+          for<'a> &'a V: IntoIterator<Item=(KeyType<V>, &'a ScalarField<V>)>,
+          <V as Vector>::BasisType: BasisWithDegree
+{
+    fn degree(&self) -> DegreeType {
+        match self.into_iter()
+            .map(|(k, v)| <V as Vector>::BasisType::degree(&k))
+            .max()
+        {
+            Some(val) => val,
+            None => 0
+        }
+    }
+}
 
 
 
@@ -221,6 +229,6 @@ mod implementation;
 mod dense_vector;
 mod sparse_vector;
 
-pub use dense_vector::DenseVector;
+pub use dense_vector::{DenseVector, ResizeableDenseVector};
 pub use sparse_vector::SparseVector;
 pub use implementation::SimpleDenseVector;

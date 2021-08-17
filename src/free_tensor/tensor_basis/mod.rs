@@ -21,6 +21,11 @@ pub struct TensorBasis<const NLETTERS: DegreeType>;
 
 impl<const NLETTERS: DegreeType> TensorBasis<NLETTERS> {
 
+    pub const fn max_degree() -> DegreeType
+    {
+        TensorKey::<NLETTERS>::max_depth()
+    }
+
     pub(crate) const fn start_of_degree(deg: DegreeType) -> DimensionType
     {
         (((NLETTERS as DimensionType).pow(deg) - 1) / (NLETTERS as DimensionType - 1)) as DimensionType

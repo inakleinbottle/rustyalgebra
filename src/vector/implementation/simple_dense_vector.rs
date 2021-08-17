@@ -29,6 +29,8 @@ enum SimpleDenseVectorData<'a, S: CoefficientField>
 }
 use SimpleDenseVectorData::*;
 use std::iter::Zip;
+use crate::vector::dense_vector::ResizeableDenseVector;
+use crate::vector::implementation::SimpleSparseVector;
 
 
 #[derive(Debug)]
@@ -88,14 +90,6 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
 
         self.0 = Owned(new_vec)
         //let old = mem::replace(&mut self.0, Owned(new_vec));
-    }
-
-    pub fn resize(&mut self, size: DimensionType)
-    {
-        match &mut self.0 {
-            Owned(v) => v.resize(size, S::ZERO),
-            BorrowedMut(_) | Borrowed(_) => Self::to_owned_with_size(self, Some(size))
-        }
     }
 
     pub fn size(&self) -> DimensionType
@@ -348,8 +342,21 @@ impl<'a, B, S> DenseVector for SimpleDenseVector<'a, B, S>
     }
 }
 
+impl<'a, B, S> ResizeableDenseVector for SimpleDenseVector<'a, B, S>
+    where B: OrderedBasis,
+          S: CoefficientField
+{
+    fn resize(&mut self, new_dim: DimensionType)
+    {
+        match &mut self.0 {
+            Owned(v) => v.resize(new_dim, S::ZERO),
+            BorrowedMut(_) | Borrowed(_) => Self::to_owned_with_size(self, Some(new_dim))
+        }
+    }
+}
 
-impl<'a, B, S> VectorWithDegree<B> for SimpleDenseVector<'a, B, S>
+
+impl<'a, B, S> VectorWithDegree for SimpleDenseVector<'a, B, S>
     where B: OrderedBasisWithDegree,
           S: CoefficientField
 {
