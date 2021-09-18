@@ -1,6 +1,7 @@
 use crate::{DegreeType, LetterType};
 
-use super::tensor_key::{make_mask, TensorKey};
+use crate::implementation::{make_mask};
+use super::TensorKey;
 
 pub struct TensorBasisIterator<const NLETTERS: DegreeType> {
     current: Option<TensorKey<NLETTERS>>,

@@ -1,4 +1,5 @@
 use std::cmp::PartialEq;
+use std::borrow::Borrow;
 
 use crate::DegreeType;
 
@@ -34,6 +35,7 @@ pub trait CoefficientField
     }
 
     fn uminus(&self) -> Self;
+    fn inv(arg: impl Borrow<Self::RationalType>) -> Self;
 
     fn add(&self, other: &Self) -> Self;
     fn sub(&self, other: &Self) -> Self;

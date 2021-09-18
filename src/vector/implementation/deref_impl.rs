@@ -1,18 +1,17 @@
 
-
+use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
 
-use super::*;
+use crate::vector::*;
 
 
 
-impl<U, V> Vector for V
+impl<'a, U, V> Vector<'a> for V
     where V: Deref<Target=U> + DerefMut<Target=U> + From<U> + PartialEq,
-          U: Vector
+          U: Vector<'a>
 {
     type BasisType = U::BasisType;
     type ScalarFieldType = U::ScalarFieldType;
-    //type IteratorType = U::IteratorType;
 
     fn new() -> Self
     {
@@ -43,15 +42,15 @@ impl<U, V> Vector for V
         todo!()
     }
 
-    fn get(&self, key: impl AsRef<<<Self as Vector>::BasisType as Basis>::KeyType>) -> Option<&Self::ScalarFieldType> {
+    fn get(&self, key: impl Borrow<KeyType<Self>>) -> Option<&Self::ScalarFieldType> {
         todo!()
     }
 
-    fn get_mut(&mut self, key: impl AsRef<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
+    fn get_mut(&mut self, key: impl Borrow<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
         todo!()
     }
 
-    fn insert_single(&mut self, key: impl Into<KeyType<Self>>, value: impl Into<Self::ScalarFieldType>) {
+    fn insert_single(&mut self, key: &KeyType<Self>, value: impl Into<Self::ScalarFieldType>) {
         todo!()
     }
 
@@ -59,14 +58,10 @@ impl<U, V> Vector for V
         todo!()
     }
 
-    fn erase(&mut self, key: impl AsRef<KeyType<Self>>) {
+    fn erase(&mut self, key: impl Borrow<KeyType<Self>>) {
         todo!()
     }
-/*
-    fn iter_pairs(&self) -> Self::IteratorType {
-        self.borrow().iter_pairs()
-    }
-*/
+
     fn uminus_inplace(&mut self) -> &mut Self {
         todo!()
     }

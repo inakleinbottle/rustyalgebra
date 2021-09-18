@@ -2,23 +2,24 @@
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use std::iter::IntoIterator;
 
-
-use crate::basis::Basis;
+use crate::basis::{Basis, OrderedBasis};
 use crate::coefficients::CoefficientField;
-use crate::vector::{Vector, KeyType, RationalType};
+use crate::vector::{Vector, KeyType, RationalType, ScalarField};
 use std::borrow::{BorrowMut, Borrow};
 use std::hash::Hash;
+use crate::DimensionType;
 
 
 #[derive(Debug)]
-pub struct SimpleSparseVector<B, S, K>(HashMap<K, S>, PhantomData<B>)
+pub struct SimpleSparseVector<'a, B, S, K>(HashMap<K, S>, PhantomData<&'a B>)
     where B: Basis<KeyType=K>,
           K: Hash + Eq + Clone,
           S: CoefficientField;
 
 
-impl<B, S, K> PartialEq for SimpleSparseVector<B, S, K>
+impl<'a, B, S, K> PartialEq for SimpleSparseVector<'a, B, S, K>
     where B: Basis<KeyType=K>,
           K: Hash + Eq + Clone,
           S: CoefficientField
@@ -40,10 +41,12 @@ impl<B, S, K> PartialEq for SimpleSparseVector<B, S, K>
 }
 
 
-impl<B, S, K> Vector for SimpleSparseVector<B, S, K>
-    where B: Basis<KeyType=K>,
-          K: Hash + Eq + Clone,
-          S: CoefficientField
+
+
+impl<'a, B, S, K> Vector<'a> for SimpleSparseVector<'a, B, S, K>
+    where B: 'static + Basis<KeyType=K>,
+          K: 'static + Hash + Eq + Clone,
+          S: 'static + CoefficientField
 {
     type BasisType = B;
     type ScalarFieldType = S;
@@ -78,23 +81,23 @@ impl<B, S, K> Vector for SimpleSparseVector<B, S, K>
         self.0.clear()
     }
 
-    fn get(&self, key: impl AsRef<<<Self as Vector>::BasisType as Basis>::KeyType>) -> Option<&Self::ScalarFieldType> {
-        self.0.get(key.as_ref())
+    fn get(&self, key: impl Borrow<KeyType<Self>>) -> Option<&Self::ScalarFieldType> {
+        self.0.get(key.borrow())
     }
 
-    fn get_mut(&mut self, key: impl AsRef<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
-        self.0.get_mut(key.as_ref())
+    fn get_mut(&mut self, key: impl Borrow<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
+        self.0.get_mut(key.borrow())
     }
 
-    fn insert_single(&mut self, key: impl Into<KeyType<Self>>, value: impl Into<Self::ScalarFieldType>) {
-        self.0.insert(key.into(), value.into());
+    fn insert_single(&mut self, key: &KeyType<Self>, value: impl Into<Self::ScalarFieldType>) {
+        self.0.insert(key.clone(), value.into());
     }
 
     fn insert(&mut self, iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) {
         todo!()
     }
 
-    fn erase(&mut self, key: impl AsRef<KeyType<Self>>) {
+    fn erase(&mut self, key: impl Borrow<KeyType<Self>>) {
         todo!()
     }
 
@@ -169,7 +172,7 @@ mod tests {
     type TKey = TensorKey<3>;
     type TBasis = TensorBasis<3>;
 
-    type Vect = SimpleSparseVector<TBasis, f64, TKey>;
+    type Vect<'a> = SimpleSparseVector<'a, TBasis, f64, TKey>;
 
 
     #[test]

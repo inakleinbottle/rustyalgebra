@@ -14,7 +14,7 @@ use crate::{DimensionType, DegreeType, LetterType};
 pub use tensor_key::{TensorKey, TensorKeyIterator};
 pub use key_iterator::TensorBasisIterator;
 
-use tensor_key::{const_logn, make_mask};
+use crate::implementation::{const_logn, make_mask};
 
 #[derive(Debug)]
 pub struct TensorBasis<const NLETTERS: DegreeType>;
@@ -132,6 +132,9 @@ impl<const NLETTERS: DegreeType> BasisWithDegree for TensorBasis<NLETTERS> {
 impl<const NLETTERS: DegreeType> OrderedBasisWithDegree for TensorBasis<NLETTERS> {
     fn index_to_degree(index: DimensionType) -> DegreeType {
         Self::index_to_degree(&index)
+    }
+    fn start_of_degree(deg: DegreeType) -> DimensionType {
+        Self::start_of_degree(deg)
     }
 }
 

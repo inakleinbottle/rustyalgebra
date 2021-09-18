@@ -39,4 +39,6 @@ pub trait BasisWithDegree : Basis
 pub trait OrderedBasisWithDegree : OrderedBasis + BasisWithDegree
 {
     fn index_to_degree(index: DimensionType) -> DegreeType;
+
+    fn start_of_degree(deg: DegreeType) -> DimensionType;
 }

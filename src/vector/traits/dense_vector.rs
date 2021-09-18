@@ -1,7 +1,7 @@
 
 use std::slice::SliceIndex;
 
-use super::Vector;
+use crate::vector::Vector;
 use crate::DimensionType;
 
 

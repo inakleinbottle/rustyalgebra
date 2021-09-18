@@ -1,4 +1,6 @@
 
+use std::borrow::Borrow;
+
 use super::{CoefficientBase, Commutative, CoefficientField, FromDegreeType};
 use crate::DegreeType;
 
@@ -32,6 +34,12 @@ impl CoefficientField for f32
     fn uminus(&self) -> Self {
         -(*self)
     }
+    #[inline(always)]
+    fn inv(arg: impl Borrow<Self::RationalType>) -> Self
+    {
+        Self::ONE / arg.borrow()
+    }
+
     #[inline(always)]
     fn add(&self, other: &Self) -> Self {
         self + other
@@ -82,6 +90,12 @@ impl CoefficientField for f64
     fn uminus(&self) -> Self {
         -(*self)
     }
+    #[inline(always)]
+    fn inv(arg: impl Borrow<Self::RationalType>) -> Self
+    {
+        Self::ONE / arg.borrow()
+    }
+
     #[inline(always)]
     fn add(&self, other: &Self) -> Self {
         self + other

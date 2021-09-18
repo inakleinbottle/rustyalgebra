@@ -6,16 +6,16 @@ use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
 use std::ops::{Range, Index};
 use std::mem;
-use std::slice::{SliceIndex, Iter};
-
+use std::slice::{SliceIndex, Iter as SliceIter};
+use std::iter::{Zip, Enumerate, IntoIterator};
 
 
 use crate::vector::{Vector, KeyType, RationalType};
 use crate::coefficients::{CoefficientField};
-use crate::basis::{OrderedBasis, OrderedBasisWithDegree};
+use crate::basis::{OrderedBasis, OrderedBasisWithDegree, Basis};
 use crate::{DimensionType, DegreeType};
 use crate::vector::{VectorWithDegree, ScalarField, DenseVector};
-
+use crate::vector::traits::VectorIterItem;
 
 
 
@@ -28,8 +28,9 @@ enum SimpleDenseVectorData<'a, S: CoefficientField>
     BorrowedMut(&'a mut [S])
 }
 use SimpleDenseVectorData::*;
-use std::iter::Zip;
-use crate::vector::dense_vector::ResizeableDenseVector;
+
+
+use crate::vector::traits::ResizeableDenseVector;
 use crate::vector::implementation::SimpleSparseVector;
 
 
@@ -70,8 +71,6 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
         SimpleDenseVector(Owned(vec![S::ZERO; size]), PhantomData)
     }
 
-
-
     fn to_owned_with_size(&mut self, resize: Option<DimensionType>)
     {
         let sz = resize.unwrap_or(self.size());
@@ -99,6 +98,16 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
             BorrowedMut(v) => v.len(),
             Borrowed(v) => v.len()
         }
+    }
+}
+
+
+impl<'a, B: OrderedBasisWithDegree, S: CoefficientField> SimpleDenseVector<'a, B, S> {
+
+    fn from_degree(deg: DegreeType) -> Self
+    {
+        let dim = B::start_of_degree(deg);
+        Self::from_dimension(dim)
     }
 
 }
@@ -135,7 +144,6 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
 
     pub(crate) fn as_mut_slice(&mut self) -> &mut [S]
     {
-
         if let Borrowed(v) = self.0 {
             self.0 = Owned(v.to_vec());
         }
@@ -150,13 +158,53 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
 }
 
 
-impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
+pub struct SimpleDenseVectorIterator<'a, B, S>
+    where B: OrderedBasis, S: CoefficientField
+{
+    impl_: Zip<B::KeyIterator, SliceIter<'a, S>>
+}
+
+
+impl<'a, B, S> Iterator for SimpleDenseVectorIterator<'a, B, S>
+    where B: OrderedBasis, S: CoefficientField
+{
+    type Item = VectorIterItem<'a, B::KeyType, S>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.impl_.next().map(Into::<Self::Item>::into)
+    }
+}
+
+impl<'a, B, S> From<SliceIter<'a, S>> for SimpleDenseVectorIterator<'a, B, S>
+    where B: OrderedBasis, S: CoefficientField
+{
+    fn from(arg: SliceIter<'a, S>) -> Self {
+        SimpleDenseVectorIterator { impl_: B::iter_keys().zip(arg) }
+    }
+}
+
+
+impl<'a, 'b: 'a, B, S> IntoIterator for &'b SimpleDenseVector<'a, B, S>
+    where B: OrderedBasis,
+          S: CoefficientField
+{
+    type Item = VectorIterItem<'a, B::KeyType, S>;
+    type IntoIter = SimpleDenseVectorIterator<'a, B, S>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.as_slice().iter().into()
+    }
+}
+
+
+
+
+impl<'a, B, S> Vector<'a> for SimpleDenseVector<'a, B, S>
     where B: OrderedBasis,
           S: CoefficientField
 {
     type BasisType = B;
     type ScalarFieldType = S;
-    //type IteratorType = Zip<B::KeyIterator, Iter<'a, S>>;
 
     fn new() -> Self {
         Self::new()
@@ -203,8 +251,9 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         result
     }
 
-    fn swap(&mut self, other: impl BorrowMut<Self>) {
-        todo!()
+    fn swap(&mut self, mut other: impl BorrowMut<Self>)
+    {
+        mem::swap(&mut self.0, &mut other.borrow_mut().0);
     }
 
     fn to_owned(&self) -> Self {
@@ -219,38 +268,31 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         };
     }
 
-    fn get(&self, key: impl AsRef<KeyType<Self>>) -> Option<&Self::ScalarFieldType> {
-        self.as_slice().get(B::key_to_index(key.as_ref()))
+    fn get(&self, key: impl Borrow<KeyType<Self>>) -> Option<&Self::ScalarFieldType> {
+        self.as_slice().get(B::key_to_index(key.borrow()))
     }
 
-    fn get_mut(&mut self, key: impl AsRef<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
-        self.as_mut_slice().get_mut(B::key_to_index(key.as_ref()))
+    fn get_mut(&mut self, key: impl Borrow<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
+        self.as_mut_slice().get_mut(B::key_to_index(key.borrow()))
     }
 
-    fn insert_single(&mut self, key: impl Into<KeyType<Self>>, value: impl Into<Self::ScalarFieldType>) {
-        todo!()
+    fn insert_single(&mut self, key: &KeyType<Self>, value: impl Into<Self::ScalarFieldType>)
+    {
+        let idx = B::key_to_index(key);
+
+
     }
 
     fn insert(&mut self, iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) {
         todo!()
     }
 
-
-    fn erase(&mut self, key: impl AsRef<KeyType<Self>>) {
-        todo!()
-    }
-/*
-    fn iter_pairs(&self) -> Self::IteratorType
+    fn erase(&mut self, key: impl Borrow<KeyType<Self>>)
     {
-        let a = match &self.0 {
-            Owned(ref v) => v.as_slice(),
-            Borrowed(v) => v,
-            BorrowedMut(v) => v
-        };
-
-        <Self as Vector>::BasisType::iter_keys().zip()
+        if let Some(v) = self.get_mut(key) {
+            *v = S::ZERO;
+        }
     }
-*/
 
     fn uminus_inplace(&mut self) -> &mut Self {
         for val in self.as_mut_slice() {
@@ -378,7 +420,7 @@ impl<'a, B, S, K> Display for SimpleDenseVector<'a, B, S>
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for (k, v) in B::iter_keys().zip(self.as_slice())  {
-            write!(f, "{}{}", v, k)?;
+            write!(f, "{}{}", v, k as K)?;
         }
         Ok(())
     }

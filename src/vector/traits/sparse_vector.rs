@@ -1,5 +1,5 @@
 
-use super::Vector;
+use crate::vector::Vector;
 
 
 
