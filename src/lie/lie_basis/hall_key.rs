@@ -2,11 +2,11 @@
 
 use std::fmt::{self, Debug, Display, Formatter};
 
-use crate::implementation::{make_mask, const_logn};
+use crate::implementation::{make_mask};
 use crate::{DegreeType, LetterType, DimensionType};
 
 use super::DataType;
-use super::{get_hall_set, hall_set::{HallSet, HallSetError}};
+use super::{get_hall_set, hall_set::{HallSet}};
 
 const KEY_BITS: DegreeType = 18;
 const PARENT_BITS: DegreeType = 18;

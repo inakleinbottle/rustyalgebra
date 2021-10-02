@@ -33,15 +33,15 @@
 
 
 use std::iter::IntoIterator;
-use std::slice::SliceIndex;
+
 
 pub use implementation::SimpleDenseVector;
 pub use traits::*;
 //pub use wrapper::VectorWrapper;
 
-use crate::{DegreeType, DimensionType, LetterType};
-use crate::basis::{Basis, BasisWithDegree, OrderedBasis};
-use crate::coefficients::CoefficientField;
+
+
+
 
 pub mod implementation;
 pub mod traits;

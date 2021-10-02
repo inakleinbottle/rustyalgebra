@@ -1,10 +1,10 @@
 pub mod tensor_key;
 pub mod key_iterator;
 
-use std::mem::size_of;
+
 use std::cmp::Ordering;
 use std::fmt::{self, Debug, Display, Formatter};
-use std::iter::{Iterator};
+
 use std::ops::Range;
 
 use crate::basis::{Basis, BasisWithDegree, OrderedBasis, OrderedBasisWithDegree};
@@ -14,7 +14,7 @@ use crate::{DimensionType, DegreeType, LetterType};
 pub use tensor_key::{TensorKey, TensorKeyIterator};
 pub use key_iterator::TensorBasisIterator;
 
-use crate::implementation::{const_logn, make_mask};
+
 
 #[derive(Debug)]
 pub struct TensorBasis<const NLETTERS: DegreeType>;

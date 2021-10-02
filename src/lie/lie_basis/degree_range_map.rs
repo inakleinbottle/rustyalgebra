@@ -2,7 +2,7 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::{DegreeType, DimensionType, SignedDimensionType};
+use crate::{DegreeType, DimensionType};
 use super::DataType;
 
 use std::fmt::Formatter;

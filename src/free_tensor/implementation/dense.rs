@@ -6,11 +6,11 @@ use crate::algebra::Algebra;
 use crate::basis::Basis;
 use crate::coefficients::CoefficientField;
 use crate::DegreeType;
-use crate::free_tensor::FreeTensor;
+
 use crate::vector::{DenseVector, ScalarField, Vector, VectorWithDegree, ResizeableDenseVector};
 use crate::vector::SimpleDenseVector;
 
-use super::super::{TensorBasis, TensorKey, TensorKeyIterator};
+use super::super::{TensorBasis};
 
 
 #[derive(PartialEq)]
@@ -20,8 +20,8 @@ pub struct DenseTensor<
     const NLETTERS: DegreeType
 >(SimpleDenseVector<'a, TensorBasis<NLETTERS>, S>);
 
-type Key<V> = <<V as Vector>::BasisType as Basis>::KeyType;
-type BasisT<V> = <V as Vector>::BasisType;
+type Key<'a, V> = <<V as Vector>::BasisType as Basis>::KeyType;
+type BasisT<'a, V> = <V as Vector>::BasisType;
 
 
 impl<'a, S, const NLETTERS: DegreeType> Deref for DenseTensor<'a, S, NLETTERS>
@@ -65,7 +65,7 @@ impl<'a, S, const NLETTERS: DegreeType> From<SimpleDenseVector<'a, TensorBasis<N
 
 mod tensor_mul_impl {
     use crate::coefficients::CoefficientField;
-    use crate::DegreeType;
+    
 
     pub(super) unsafe fn dense_tensor_multiply_into_buffer<S: CoefficientField>(
         out: &mut [S],
@@ -261,7 +261,7 @@ impl<'a, S, const NLETTERS: DegreeType> Algebra for DenseTensor<'a, S, NLETTERS>
 }
 */
 
-impl<V, S, const NLETTERS: DegreeType> Algebra for V
+impl<'a, V, S, const NLETTERS: DegreeType> Algebra for V
     where S: CoefficientField,
           V: ResizeableDenseVector<BasisType=TensorBasis<NLETTERS>, ScalarFieldType=S>
              + VectorWithDegree
@@ -432,6 +432,7 @@ impl<V, S, const NLETTERS: DegreeType> Algebra for V
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::free_tensor::TensorKey;
 
     type BasisT = TensorBasis<3>;
     type TensorT<'a> = SimpleDenseVector<'a, BasisT, f64>;

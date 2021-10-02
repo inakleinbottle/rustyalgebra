@@ -9,7 +9,7 @@ use std::borrow::{Borrow, BorrowMut};
 use crate::DegreeType;
 use crate::algebra::Algebra;
 use crate::coefficients::{CoefficientField, FromDegreeType};
-use crate::basis::{Basis};
+
 use crate::vector::{Vector, KeyType, RationalType, ScalarField};
 
 
@@ -18,7 +18,7 @@ pub use tensor_basis::{TensorKey, TensorBasis, TensorKeyIterator};
 pub use implementation::DenseTensor;
 
 
-pub trait FreeTensor<const NLETTERS: DegreeType> : Algebra<BasisType=TensorBasis<{ NLETTERS }>> {
+pub trait FreeTensor<'a, const NLETTERS: DegreeType> : Algebra<BasisType=TensorBasis<NLETTERS>> {
 
     const MAX_DEGREE: DegreeType;
 

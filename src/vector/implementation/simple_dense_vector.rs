@@ -4,19 +4,17 @@ use std::fmt::{self, Display, Formatter};
 use std::cmp;
 use std::borrow::{Borrow, BorrowMut};
 use std::marker::PhantomData;
-use std::ops::{Range, Index};
+
 use std::mem;
 use std::slice::{SliceIndex, Iter as SliceIter};
-use std::iter::{Zip, Enumerate, IntoIterator};
+use std::iter::{Zip, IntoIterator};
+use std::ops::Range;
 
-
-use crate::vector::{Vector, KeyType, RationalType};
+use crate::vector::{Vector, KeyType, RationalType, /*VectorIter, VectorIterItem,*/ ScalarField};
 use crate::coefficients::{CoefficientField};
-use crate::basis::{OrderedBasis, OrderedBasisWithDegree, Basis};
+use crate::basis::{OrderedBasis, OrderedBasisWithDegree};
 use crate::{DimensionType, DegreeType};
-use crate::vector::{VectorWithDegree, ScalarField, DenseVector};
-use crate::vector::traits::VectorIterItem;
-
+use crate::vector::{VectorWithDegree, DenseVector};
 
 
 
@@ -31,7 +29,7 @@ use SimpleDenseVectorData::*;
 
 
 use crate::vector::traits::ResizeableDenseVector;
-use crate::vector::implementation::SimpleSparseVector;
+
 
 
 #[derive(Debug)]
@@ -76,9 +74,9 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
         let sz = resize.unwrap_or(self.size());
         let mut new_vec = Vec::with_capacity(sz);
 
-        match self.0 {
-            Borrowed(ref v) => new_vec.extend_from_slice(v),
-            BorrowedMut(ref v) => new_vec.extend_from_slice(v),
+        match &self.0 {
+            Borrowed(v) => new_vec.extend_from_slice(v),
+            BorrowedMut(v) => new_vec.extend_from_slice(v),
             Owned(_) => unreachable!()
         }
 
@@ -115,7 +113,7 @@ impl<'a, B: OrderedBasisWithDegree, S: CoefficientField> SimpleDenseVector<'a, B
 impl<'a, B: OrderedBasis, S: CoefficientField> PartialEq for SimpleDenseVector<'a, B, S> {
     fn eq(&self, other: &Self) -> bool {
         let a = match &self.0 {
-            Owned(ref v) => v.as_slice(),
+            Owned(v) => v.as_slice(),
             BorrowedMut(v) => v,
             Borrowed(v ) => v
         };
@@ -136,9 +134,9 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
     pub(crate) fn as_slice(&self) -> &[S]
     {
         match &self.0 {
-            Owned(v) => v,
-            Borrowed(v) => *v,
-            BorrowedMut(v) => *v
+            Owned(v) => v.as_slice(),
+            Borrowed(v) => v,
+            BorrowedMut(v) => v
         }
     }
 
@@ -149,15 +147,15 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
         }
 
         match &mut self.0 {
-            Owned(v) => v,
-            BorrowedMut(v) => *v,
+            Owned(v) => v.as_mut_slice(),
+            BorrowedMut(v) => v,
             Borrowed(_) => unreachable!()
         }
     }
 
 }
 
-
+/*
 pub struct SimpleDenseVectorIterator<'a, B, S>
     where B: OrderedBasis, S: CoefficientField
 {
@@ -183,25 +181,20 @@ impl<'a, B, S> From<SliceIter<'a, S>> for SimpleDenseVectorIterator<'a, B, S>
     }
 }
 
-
-impl<'a, 'b: 'a, B, S> IntoIterator for &'b SimpleDenseVector<'a, B, S>
-    where B: OrderedBasis,
-          S: CoefficientField
+impl<'a, B, S> From<&'a [S]> for SimpleDenseVectorIterator<'a, B, S>
+    where B: OrderedBasis, S: CoefficientField
 {
-    type Item = VectorIterItem<'a, B::KeyType, S>;
-    type IntoIter = SimpleDenseVectorIterator<'a, B, S>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.as_slice().iter().into()
+    fn from(arg: &'a [S]) -> Self {
+        SimpleDenseVectorIterator { impl_: B::iter_keys().zip(arg.into_iter()) }
     }
 }
 
+*/
 
 
-
-impl<'a, B, S> Vector<'a> for SimpleDenseVector<'a, B, S>
-    where B: OrderedBasis,
-          S: CoefficientField
+impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
+    where B: 'static + OrderedBasis,
+          S: 'static + CoefficientField
 {
     type BasisType = B;
     type ScalarFieldType = S;
@@ -237,7 +230,7 @@ impl<'a, B, S> Vector<'a> for SimpleDenseVector<'a, B, S>
         }
 
         vec.sort_by(|(i1, _v1), (i2, _v2)| { cmp::Ord::cmp(i1, i2) });
-        let dimension = Self::BasisType::vector_dimension_for_index(vec.last().unwrap().0);
+        let dimension = Self::BasisType::vector_dimension_for_index( vec.last().unwrap().0);
 
         let mut result = Self::from_dimension(dimension);
 
@@ -360,14 +353,14 @@ impl<'a, B, S> Vector<'a> for SimpleDenseVector<'a, B, S>
 
 
 impl<'a, B, S> DenseVector for SimpleDenseVector<'a, B, S>
-    where B: OrderedBasis,
-          S: CoefficientField
+    where B: 'static + OrderedBasis,
+          S: 'static + CoefficientField
 {
     fn as_slice(&self) -> &[Self::ScalarFieldType] {
         match &self.0 {
             Owned(v) => v,
-            Borrowed(v) => *v,
-            BorrowedMut(v) => *v
+            Borrowed(v) => v,
+            BorrowedMut(v) => v
         }
     }
 
@@ -378,15 +371,15 @@ impl<'a, B, S> DenseVector for SimpleDenseVector<'a, B, S>
 
         match &mut self.0 {
             Owned(v) => v,
-            BorrowedMut(v) => *v,
+            BorrowedMut(v) => v,
             Borrowed(_) => unreachable!()
         }
     }
 }
 
 impl<'a, B, S> ResizeableDenseVector for SimpleDenseVector<'a, B, S>
-    where B: OrderedBasis,
-          S: CoefficientField
+    where B: 'static + OrderedBasis,
+          S: 'static + CoefficientField
 {
     fn resize(&mut self, new_dim: DimensionType)
     {
@@ -399,8 +392,8 @@ impl<'a, B, S> ResizeableDenseVector for SimpleDenseVector<'a, B, S>
 
 
 impl<'a, B, S> VectorWithDegree for SimpleDenseVector<'a, B, S>
-    where B: OrderedBasisWithDegree,
-          S: CoefficientField
+    where B: 'static + OrderedBasisWithDegree,
+          S: 'static + CoefficientField
 {
     fn degree(&self) -> DegreeType {
         let size = self.size();
@@ -414,8 +407,8 @@ impl<'a, B, S> VectorWithDegree for SimpleDenseVector<'a, B, S>
 }
 
 impl<'a, B, S, K> Display for SimpleDenseVector<'a, B, S>
-    where B: OrderedBasis<KeyType = K>,
-          S: CoefficientField + Display,
+    where B: 'a + OrderedBasis<KeyType = K>,
+          S: 'a + CoefficientField + Display,
           K: Display
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

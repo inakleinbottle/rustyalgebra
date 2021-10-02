@@ -1,14 +1,14 @@
 
-use std::cmp;
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
-use std::sync::{Arc, RwLock, Mutex};
+use std::sync::{Arc, RwLock};
 
 
 use lazy_static::lazy_static;
 
-use crate::{DegreeType, LetterType, DimensionType, SignedDimensionType};
+use crate::{DegreeType, LetterType, DimensionType};
 use super::DataType;
 
 use super::degree_range_map::{DegreeRangeMap, DegreeRangeMapError};
@@ -276,7 +276,7 @@ pub fn get_hall_set<const NLETTERS: DegreeType>(pre_grow: Option<DegreeType>) ->
 #[cfg(test)]
 mod tests {
 
-    use super::*;
+    
 
 
 

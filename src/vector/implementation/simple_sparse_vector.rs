@@ -1,15 +1,15 @@
 
 
-use std::collections::HashMap;
+use std::collections::{HashMap, hash_map::{Iter as HashMapIter}};
 use std::marker::PhantomData;
 use std::iter::IntoIterator;
 
-use crate::basis::{Basis, OrderedBasis};
+use crate::basis::{Basis};
 use crate::coefficients::CoefficientField;
-use crate::vector::{Vector, KeyType, RationalType, ScalarField};
+use crate::vector::{Vector, KeyType, RationalType, /*VectorIterItem, VectorIter*/};
 use std::borrow::{BorrowMut, Borrow};
 use std::hash::Hash;
-use crate::DimensionType;
+
 
 
 #[derive(Debug)]
@@ -39,11 +39,42 @@ impl<'a, B, S, K> PartialEq for SimpleSparseVector<'a, B, S, K>
         true
     }
 }
+/*
+pub struct SimpleSparseVectorIterator<'a, K, S>(HashMapIter<'a, K, S>);
+
+impl<'a, K, S> From<HashMapIter<'a, K, S>> for SimpleSparseVectorIterator<'a, K, S> {
+    fn from(arg: HashMapIter<'a, K, S>) -> Self {
+        Self(arg)
+    }
+}
+
+impl<'a, K, S> Iterator for SimpleSparseVectorIterator<'a, K, S>
+{
+    type Item = VectorIterItem<'a, K, S>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(Into::<Self::Item>::into)
+    }
+}
+*/
 
 
 
+/*
+impl<'a, B, S, K> VectorIter<'a, K, S> for SimpleSparseVector<'a, B, S, K>
+    where B: 'a + Basis<KeyType=K>,
+          K: 'a + Hash + Eq + Clone,
+          S: 'a + CoefficientField
+{
+    type IteratorType = SimpleSparseVectorIterator<'a, K, S>;
 
-impl<'a, B, S, K> Vector<'a> for SimpleSparseVector<'a, B, S, K>
+    fn iter_items(&self) -> Self::IteratorType {
+        self.0.iter().into()
+    }
+}
+*/
+
+impl<'a, B, S, K> Vector for SimpleSparseVector<'a, B, S, K>
     where B: 'static + Basis<KeyType=K>,
           K: 'static + Hash + Eq + Clone,
           S: 'static + CoefficientField

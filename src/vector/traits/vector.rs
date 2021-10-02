@@ -1,23 +1,22 @@
-#![feature(generic_associated_types)]
 
 use std::borrow::{Borrow, BorrowMut};
 
 
-use crate::{DegreeType, DimensionType, LetterType};
-use crate::basis::{Basis, BasisWithDegree, OrderedBasis};
+
+use crate::basis::{Basis};
 use crate::coefficients::CoefficientField;
-use super::iteration::VectorIterItem;
+//use super::iteration::VectorIterItem;
+//use super::VectorIter;
 
-pub type KeyType<'a, V> = <<V as Vector<'a>>::BasisType as Basis>::KeyType;
-pub type ScalarField<'a, V> = <V as Vector<'a>>::ScalarFieldType;
-pub type RationalType<'a, V> = <<V as Vector<'a>>::ScalarFieldType as CoefficientField>::RationalType;
+pub type KeyType<V> = <<V as Vector>::BasisType as Basis>::KeyType;
+pub type ScalarField<V> = <V as Vector>::ScalarFieldType;
+pub type RationalType<V> = <<V as Vector>::ScalarFieldType as CoefficientField>::RationalType;
 
 
-pub trait Vector<'a> : Sized + PartialEq
-    where for<'b> &'b Self: IntoIterator<Item=VectorIterItem<'a, KeyType<Self>, ScalarField<Self>>>
+pub trait Vector : Sized + PartialEq /* + VectorIter<KeyType<Self>, ScalarField<Self>> */
 {
-    type BasisType: Basis;
-    type ScalarFieldType: CoefficientField;
+    type BasisType: 'static + Basis;
+    type ScalarFieldType: 'static +  CoefficientField;
 
     // Creation methods
     fn new() -> Self;
@@ -34,8 +33,8 @@ pub trait Vector<'a> : Sized + PartialEq
     fn clear(&mut self);
 
     // Element access methods
-    fn get(&self, key: impl Borrow<KeyType<Self>>) -> Option<&'a Self::ScalarFieldType>;
-    fn get_mut(&mut self, key: impl Borrow<KeyType<Self>>) -> Option<&'a mut Self::ScalarFieldType>;
+    fn get(&self, key: impl Borrow<KeyType<Self>>) -> Option<&Self::ScalarFieldType>;
+    fn get_mut(&mut self, key: impl Borrow<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType>;
 
     fn insert_single(&mut self, key: &KeyType<Self>, value: impl Into<Self::ScalarFieldType>);
     fn insert(&mut self, iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>);
@@ -155,3 +154,6 @@ pub trait Vector<'a> : Sized + PartialEq
     }
 
 }
+
+
+

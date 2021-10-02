@@ -3,7 +3,7 @@ use std::borrow::{Borrow, BorrowMut};
 
 use crate::vector::{ScalarField};
 
-use crate::basis::Basis;
+
 use crate::coefficients::CoefficientField;
 use crate::DegreeType;
 use crate::vector::Vector;
@@ -89,7 +89,9 @@ pub trait Algebra : Vector {
     {
         let mut result = Self::new();
         let rhs_borrowed = rhs.borrow();
-        result.borrow_mut().add_mul(self, rhs_borrowed, to_degree).sub_mul(rhs_borrowed, self, to_degree);
+        result.borrow_mut()
+            .add_mul(self, rhs_borrowed, to_degree.clone())
+            .sub_mul(rhs_borrowed, self, to_degree);
         result
     }
 

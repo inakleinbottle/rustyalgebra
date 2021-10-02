@@ -1,15 +1,30 @@
-
-use std::borrow::Borrow;
-
-use super::{Vector, KeyType, ScalarField};
-use crate::DimensionType;
+#![feature(generic_associated_types)]
 
 
+use std::iter::Iterator;
+use crate::basis::Basis;
+use crate::coefficients::CoefficientField;
+use crate::vector::Vector;
+
+
+pub trait VectorIteratorItem<'a, K, S>
+{
+    fn key(&self) -> &K;
+    fn value(&self) -> &S;
+}
+
+
+pub trait VectorIterator<B, S> : Iterator
+    where B: Basis, S: CoefficientField
+{
+
+}
+/*
 pub struct VectorIterItem<'a, K, S>(K, &'a S);
 
 impl<'a, K, S> VectorIterItem<'a, K, S> {
 
-    fn key(&self) -> &K { &self.0 }
+    fn key(&self) -> &'a K { &self.0 }
 
     fn value(&self) -> &'a S { &self.1 }
 
@@ -23,3 +38,12 @@ impl<'a, K, S> From<(K, &'a S)> for VectorIterItem<'a, K, S>
     }
 }
 
+
+pub trait VectorIter<'a, K: 'a , S: 'a>
+{
+    type IteratorType: Iterator<Item=VectorIterItem<'a, K, S>>;
+
+    fn iter_items(&self) -> Self::IteratorType;
+
+}
+*/

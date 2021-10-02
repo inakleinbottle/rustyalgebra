@@ -3,7 +3,7 @@ use std::cmp::{PartialEq, Ordering};
 use std::convert::Into;
 use std::fmt::Display;
 
-use crate::{DegreeType, DimensionType, LetterType};
+use crate::{DegreeType, DimensionType};
 
 pub trait Basis
 {

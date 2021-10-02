@@ -67,7 +67,7 @@ pub trait VectorKeyExt : Vector {
 
 
 
-impl<V: Vector> VectorKeyExt for V {}
+impl<'a, V: Vector> VectorKeyExt for V {}
 
 
 
@@ -86,14 +86,13 @@ pub trait CrossTypeVectorExt<V> : Vector
 
 }
 
-
+/*
 impl<U, V> CrossTypeVectorExt<V> for U
     where U: Vector,
           V: Vector<BasisType=U::BasisType, ScalarFieldType=U::ScalarFieldType>,
-          for<'a> &'a V: IntoIterator<Item=(&'a KeyType<U>, &'a ScalarField<U>)>
 {
     fn add_inplace(&mut self, other: &V) -> &mut Self {
-        for (k, v) in other.into_iter() {
+        for (k, v) in other.iter_item() {
             if let Some(curr) = self.get_mut( k) {
                 ScalarField::<U>::add_inplace(curr, v);
             } else {
@@ -104,7 +103,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
     }
 
     fn sub_inplace(&mut self, other: &V) -> &mut Self {
-        for (k, v) in other.into_iter() {
+        for (k, v) in other.iter_item() {
             if let Some(curr) = self.get_mut(k) {
                 ScalarField::<U>::sub_inplace(curr, v);
             } else {
@@ -115,7 +114,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
     }
 
     fn add_scalar_mul(&mut self, other: &V, s: ScalarField<Self>) -> &mut Self {
-        for (k, v) in other.into_iter() {
+        for (k, v) in other.iter_item() {
             let tmp = ScalarField::<U>::mul(&s, v);
             if let Some(curr) = self.get_mut(k) {
                 ScalarField::<U>::add_inplace(curr, &tmp);
@@ -127,7 +126,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
     }
 
     fn sub_scalar_mul(&mut self, other: &V, s: ScalarField<Self>) -> &mut Self {
-        for (k, v) in other.into_iter() {
+        for (k, v) in other.iter_item() {
             let tmp = ScalarField::<U>::mul(&s, v);
             if let Some(curr) = self.get_mut(k) {
                 ScalarField::<U>::sub_inplace(curr, &tmp);
@@ -139,7 +138,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
     }
 
     fn add_scalar_div(&mut self, other: &V, s: RationalType<Self>) -> &mut Self {
-        for (k, v) in other.into_iter() {
+        for (k, v) in other.iter_item() {
             let tmp = ScalarField::<U>::div( v, &s);
             if let Some(curr) = self.get_mut(k) {
                 ScalarField::<U>::add_inplace(curr, &tmp);
@@ -151,7 +150,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
     }
 
     fn sub_scalar_div(&mut self, other: &V, s: RationalType<Self>) -> &mut Self {
-        for (k, v) in other.into_iter() {
+        for (k, v) in other.iter_item() {
             let tmp = ScalarField::<U>::div( v, &s);
             if let Some(curr) = self.get_mut(k) {
                 ScalarField::<U>::sub_inplace(curr, &tmp);
@@ -162,3 +161,4 @@ impl<U, V> CrossTypeVectorExt<V> for U
         self
     }
 }
+*/

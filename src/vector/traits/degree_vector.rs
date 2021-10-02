@@ -14,15 +14,14 @@ pub trait VectorWithDegree : Vector
 
 
 
-
-impl<V> VectorWithDegree for V
-    where V: Vector,
-          for<'a> &'a V: IntoIterator<Item=(KeyType<V>, &'a ScalarField<V>)>,
-          <V as Vector>::BasisType: BasisWithDegree
+/*
+impl<'a, V> VectorWithDegree<'a> for V
+    where V: Vector<'a>,
+          <V as Vector<'a>>::BasisType: BasisWithDegree
 {
     fn degree(&self) -> DegreeType {
-        match self.into_iter()
-            .map(|(k, v)| <V as Vector>::BasisType::degree(&k))
+        match self.iter_item()
+            .map(|(k, v)| <V as Vector<'a>>::BasisType::degree(&k))
             .max()
         {
             Some(val) => val,
@@ -30,3 +29,4 @@ impl<V> VectorWithDegree for V
         }
     }
 }
+*/

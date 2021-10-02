@@ -8,7 +8,7 @@ pub use dense_vector::{DenseVector, ResizeableDenseVector};
 pub use sparse_vector::SparseVector;
 pub use extension::VectorKeyExt;
 pub use degree_vector::VectorWithDegree;
-pub use iteration::VectorIterItem;
+//pub use iteration::{VectorIterItem, VectorIter};
 
 mod as_vec;
 mod dense_vector;

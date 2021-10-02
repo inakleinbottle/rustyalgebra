@@ -6,9 +6,10 @@ use crate::vector::*;
 
 
 
-impl<'a, U, V> Vector<'a> for V
+
+impl<'a, U, V> Vector for V
     where V: Deref<Target=U> + DerefMut<Target=U> + From<U> + PartialEq,
-          U: Vector<'a>
+          U: Vector
 {
     type BasisType = U::BasisType;
     type ScalarFieldType = U::ScalarFieldType;
