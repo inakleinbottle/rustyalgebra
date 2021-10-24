@@ -10,7 +10,7 @@ use crate::DegreeType;
 use crate::algebra::Algebra;
 use crate::coefficients::{CoefficientField, FromDegreeType};
 
-use crate::vector::{Vector, KeyType, RationalType, ScalarField};
+use crate::vector::{Vector};
 
 
 
@@ -18,18 +18,19 @@ pub use tensor_basis::{TensorKey, TensorBasis, TensorKeyIterator};
 pub use implementation::DenseTensor;
 
 
-pub trait FreeTensor<'a, const NLETTERS: DegreeType> : Algebra<BasisType=TensorBasis<NLETTERS>> {
+pub trait FreeTensor<'vec, S: CoefficientField, const NLETTERS: DegreeType>
+    : Algebra<'vec, BasisType=TensorBasis<NLETTERS>, KeyType=TensorKey<NLETTERS>, ScalarType=S, RationalType=S::RationalType> {
 
     const MAX_DEGREE: DegreeType;
 
     fn exp(&self) -> Self
     {
-        let tunit = Self::from_key(KeyType::<Self>::new());
-        let mut result = Self::from_key(KeyType::<Self>::new());
+        let tunit = Self::from_key(Self::KeyType::new());
+        let mut result = Self::from_key(Self::KeyType::new());
         let borrowed_result = result.borrow_mut();
 
         for i in (1..Self::MAX_DEGREE).rev() {
-            borrowed_result.mul_rat_rdiv(self, ScalarField::<Self>::from_degree(&i), Some(Self::MAX_DEGREE));
+            borrowed_result.mul_rat_rdiv(self, Self::ScalarType::from_degree(&i), Some(Self::MAX_DEGREE));
             borrowed_result.add_inplace(&tunit);
         }
         result
@@ -42,12 +43,12 @@ pub trait FreeTensor<'a, const NLETTERS: DegreeType> : Algebra<BasisType=TensorB
 
         let oself = old_self.borrow();
 
-        if let Some(unit) = x.get_mut(KeyType::<Self>::new()) {
-            *unit = Self::ScalarFieldType::ZERO.clone();
+        if let Some(unit) = x.get_mut(Self::KeyType::new()) {
+            *unit = Self::ScalarType::ZERO.clone();
         }
 
         for i in (1..Self::MAX_DEGREE).rev() {
-            self.mul_rat_rdiv(&x, ScalarField::<Self>::from_degree(&i), Some(Self::MAX_DEGREE -i + 1));
+            self.mul_rat_rdiv(&x, Self::ScalarType::from_degree(&i), Some(Self::MAX_DEGREE -i + 1));
             self.add_inplace(oself);
         }
 
@@ -56,21 +57,21 @@ pub trait FreeTensor<'a, const NLETTERS: DegreeType> : Algebra<BasisType=TensorB
 
     fn log(&self) -> Self
     {
-        let kunit = KeyType::<Self>::new();
+        let kunit = Self::KeyType::new();
         let tunit = Self::from_key(kunit.clone());
         let mut x = self.to_owned();
 
         let mut rv = Self::new();
 
         if let Some(unit) = x.get_mut(kunit) {
-            *unit = Self::ScalarFieldType::ZERO.clone();
+            *unit = Self::ScalarType::ZERO.clone();
         }
 
         for i in (1..Self::MAX_DEGREE).rev() {
             if i % 2 == 0 {
-                rv.sub_scalar_rdivide(&tunit, RationalType::<Self>::from_degree(&i));
+                rv.sub_scalar_rdivide(&tunit, Self::RationalType::from_degree(&i));
             } else {
-                rv.add_scalar_rdivide(&tunit, RationalType::<Self>::from_degree(&i));
+                rv.add_scalar_rdivide(&tunit, Self::RationalType::from_degree(&i));
             }
             rv.multiply(&x, Some(Self::MAX_DEGREE));
         }

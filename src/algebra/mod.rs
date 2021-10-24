@@ -1,7 +1,6 @@
 use std::borrow::{Borrow, BorrowMut};
 
 
-use crate::vector::{ScalarField};
 
 
 use crate::coefficients::CoefficientField;
@@ -12,20 +11,20 @@ use crate::vector::Vector;
 
 
 
-pub trait Algebra : Vector {
+pub trait Algebra<'vec> : Vector<'vec> {
 
     fn multiply_and_add_into_impl(
         &mut self,
         lhs: impl Borrow<Self>,
         rhs: impl Borrow<Self>,
-        func: impl FnMut(&<Self as Vector>::ScalarFieldType) -> ScalarField<Self>,
+        func: impl FnMut(&Self::ScalarType) -> Self::ScalarType,
         to_degree: Option<DegreeType>
     );
 
     fn multiply_into_impl(
         &mut self,
         rhs: impl Borrow<Self>,
-        func: impl FnMut(&<Self as Vector>::ScalarFieldType) -> ScalarField<Self>,
+        func: impl FnMut(&Self::ScalarType) -> Self::ScalarType,
         to_degree: Option<DegreeType>
     );
 
@@ -76,7 +75,7 @@ pub trait Algebra : Vector {
         self.multiply_and_add_into_impl(
             lhs.borrow(),
             rhs.borrow(),
-            <ScalarField<Self> as CoefficientField>::uminus,
+            <Self::ScalarType as CoefficientField>::uminus,
             to_degree);
         self
     }
@@ -98,14 +97,14 @@ pub trait Algebra : Vector {
     fn mul_scal_lprod(
         &mut self,
         rhs: impl Borrow<Self>,
-        scalar: impl Into<ScalarField<Self>>,
+        scalar: impl Into<Self::ScalarType>,
         to_degree: Option<DegreeType>
     ) -> &mut Self
     {
         let sca = scalar.into();
         self.multiply_into_impl(
             rhs.borrow(),
-            move |v| { <ScalarField<Self> as CoefficientField>::mul(&sca, v) },
+            move |v| { <Self::ScalarType as CoefficientField>::mul(&sca, v) },
             to_degree
         );
         self
@@ -114,14 +113,14 @@ pub trait Algebra : Vector {
     fn mul_scal_rprod(
         &mut self,
         rhs: impl Borrow<Self>,
-        scalar: impl Into<ScalarField<Self>>,
+        scalar: impl Into<Self::ScalarType>,
         to_degree: Option<DegreeType>
     ) -> &mut Self
     {
         let sca = scalar.into();
         self.multiply_into_impl(
             rhs.borrow(),
-            move |v| { <ScalarField<Self> as CoefficientField>::mul(v, &sca) },
+            move |v| { <Self::ScalarType as CoefficientField>::mul(v, &sca) },
             to_degree
         );
         self
@@ -130,14 +129,14 @@ pub trait Algebra : Vector {
     fn mul_rat_ldiv(
         &mut self,
         rhs: impl Borrow<Self>,
-        scalar: impl Into<<ScalarField<Self> as CoefficientField>::RationalType>,
+        scalar: impl Into<<Self::ScalarType as CoefficientField>::RationalType>,
         to_degree: Option<DegreeType>
     ) -> &mut Self
     {
         let sca = scalar.into();
         self.multiply_into_impl(
             rhs.borrow(),
-            move |v| { <ScalarField<Self> as CoefficientField>::div(v, &sca) },
+            move |v| { <Self::ScalarType as CoefficientField>::div(v, &sca) },
             to_degree
         );
         self
@@ -146,14 +145,14 @@ pub trait Algebra : Vector {
     fn mul_rat_rdiv(
         &mut self,
         rhs: impl Borrow<Self>,
-        scalar: impl Into<ScalarField<Self>>,
+        scalar: impl Into<Self::ScalarType>,
         to_degree: Option<DegreeType>
     ) -> &mut Self
     {
         let sca = scalar.into();
         self.multiply_into_impl(
             rhs.borrow(),
-            move |v| { <ScalarField<Self> as CoefficientField>::mul(v, &sca) },
+            move |v| { <Self::ScalarType as CoefficientField>::mul(v, &sca) },
             to_degree
         );
         self

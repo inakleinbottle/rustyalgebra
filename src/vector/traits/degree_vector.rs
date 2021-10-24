@@ -2,10 +2,10 @@
 use crate::DegreeType;
 use crate::basis::BasisWithDegree;
 
-use super::{Vector, KeyType, ScalarField};
+use super::{Vector};
 
-pub trait VectorWithDegree : Vector
-    where <Self as Vector>::BasisType: BasisWithDegree
+pub trait VectorWithDegree<'vec> : Vector<'vec>
+    where <Self as Vector<'vec>>::BasisType: BasisWithDegree
 {
 
     fn degree(&self) -> DegreeType;

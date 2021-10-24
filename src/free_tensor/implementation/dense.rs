@@ -7,21 +7,15 @@ use crate::basis::Basis;
 use crate::coefficients::CoefficientField;
 use crate::DegreeType;
 
-use crate::vector::{DenseVector, ScalarField, Vector, VectorWithDegree, ResizeableDenseVector};
+use crate::vector::{DenseVector, Vector, VectorWithDegree, ResizeableDenseVector};
 use crate::vector::SimpleDenseVector;
 
 use super::super::{TensorBasis};
 
 
 #[derive(PartialEq)]
-pub struct DenseTensor<
-    'a,
-    S: CoefficientField,
-    const NLETTERS: DegreeType
->(SimpleDenseVector<'a, TensorBasis<NLETTERS>, S>);
-
-type Key<'a, V> = <<V as Vector>::BasisType as Basis>::KeyType;
-type BasisT<'a, V> = <V as Vector>::BasisType;
+pub struct DenseTensor<'a, S: CoefficientField, const NLETTERS: DegreeType>
+    (SimpleDenseVector<'a, TensorBasis<NLETTERS>, S>);
 
 
 impl<'a, S, const NLETTERS: DegreeType> Deref for DenseTensor<'a, S, NLETTERS>
@@ -108,7 +102,7 @@ impl<'a, S, const NLETTERS: DegreeType> Algebra for DenseTensor<'a, S, NLETTERS>
         &mut self,
         lhs: impl Borrow<Self>,
         rhs: impl Borrow<Self>,
-        mut func: impl FnMut(&<Self as Vector>::ScalarFieldType) -> ScalarField<Self>,
+        mut func: impl FnMut(&<Self as Vector>::Self::ScalarType) -> Self::ScalarType,
         to_degree: Option<DegreeType>
     )
     {
@@ -164,7 +158,7 @@ impl<'a, S, const NLETTERS: DegreeType> Algebra for DenseTensor<'a, S, NLETTERS>
     fn multiply_into_impl(
         &mut self,
         rhs: impl Borrow<Self>,
-        mut func: impl FnMut(&<Self as Vector>::ScalarFieldType) -> ScalarField<Self>,
+        mut func: impl FnMut(&<Self as Vector>::Self::ScalarType) -> Self::ScalarType,
         to_degree: Option<DegreeType>
     )
     {
@@ -261,17 +255,17 @@ impl<'a, S, const NLETTERS: DegreeType> Algebra for DenseTensor<'a, S, NLETTERS>
 }
 */
 
-impl<'a, V, S, const NLETTERS: DegreeType> Algebra for V
+impl<'vec, V, S, const NLETTERS: DegreeType> Algebra<'vec> for V
     where S: CoefficientField,
-          V: ResizeableDenseVector<BasisType=TensorBasis<NLETTERS>, ScalarFieldType=S>
-             + VectorWithDegree
+          V: ResizeableDenseVector<'vec, BasisType=TensorBasis<NLETTERS>, ScalarType=S>
+             + VectorWithDegree<'vec>
 {
 
     fn multiply_and_add_into_impl(
         &mut self,
         lhs: impl Borrow<Self>,
         rhs: impl Borrow<Self>,
-        mut func: impl FnMut(&<Self as Vector>::ScalarFieldType) -> ScalarField<Self>,
+        mut func: impl FnMut(&<Self as Vector<'vec>>::ScalarType) -> <Self as Vector<'vec>>::ScalarType,
         to_degree: Option<DegreeType>
     )
     {
@@ -328,7 +322,7 @@ impl<'a, V, S, const NLETTERS: DegreeType> Algebra for V
     fn multiply_into_impl(
         &mut self,
         rhs: impl Borrow<Self>,
-        mut func: impl FnMut(&<Self as Vector>::ScalarFieldType) -> ScalarField<Self>,
+        mut func: impl FnMut(&<Self as Vector<'vec>>::ScalarType) -> <Self as Vector<'vec>>::ScalarType,
         to_degree: Option<DegreeType>
     )
     {

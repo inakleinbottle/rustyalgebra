@@ -1,12 +1,12 @@
 
 
-use std::collections::{HashMap, hash_map::{Iter as HashMapIter}};
+use std::collections::{HashMap, hash_map::{Iter as HashMapIter, IterMut as HashMapIterMut}};
 use std::marker::PhantomData;
 use std::iter::IntoIterator;
 
 use crate::basis::{Basis};
 use crate::coefficients::CoefficientField;
-use crate::vector::{Vector, KeyType, RationalType, /*VectorIterItem, VectorIter*/};
+use crate::vector::{Vector, VectorIteratorItem, VectorIteratorMutItem, IntoVecMutIter};
 use std::borrow::{BorrowMut, Borrow};
 use std::hash::Hash;
 
@@ -39,65 +39,72 @@ impl<'a, B, S, K> PartialEq for SimpleSparseVector<'a, B, S, K>
         true
     }
 }
-/*
-pub struct SimpleSparseVectorIterator<'a, K, S>(HashMapIter<'a, K, S>);
 
-impl<'a, K, S> From<HashMapIter<'a, K, S>> for SimpleSparseVectorIterator<'a, K, S> {
-    fn from(arg: HashMapIter<'a, K, S>) -> Self {
-        Self(arg)
-    }
-}
 
-impl<'a, K, S> Iterator for SimpleSparseVectorIterator<'a, K, S>
+
+impl<'a, K: 'a, S: 'a> VectorIteratorItem<K, S> for (&'a K, &'a S)
 {
-    type Item = VectorIterItem<'a, K, S>;
+    type KeyItem = &'a K;
+    type ValueItem = &'a S;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(Into::<Self::Item>::into)
+    fn key(&self) -> Self::KeyItem {
+        &*self.0
+    }
+
+    fn value(&self) -> Self::ValueItem {
+        &*self.1
     }
 }
-*/
 
 
 
-/*
-impl<'a, B, S, K> VectorIter<'a, K, S> for SimpleSparseVector<'a, B, S, K>
-    where B: 'a + Basis<KeyType=K>,
+impl<'a, B, S, K> IntoIterator for &'a SimpleSparseVector<'a, B, S, K>
+    where B: Basis<KeyType=K>,
           K: 'a + Hash + Eq + Clone,
           S: 'a + CoefficientField
 {
-    type IteratorType = SimpleSparseVectorIterator<'a, K, S>;
+    type Item = (&'a K, &'a S);
+    type IntoIter = HashMapIter<'a, K, S>;
 
-    fn iter_items(&self) -> Self::IteratorType {
-        self.0.iter().into()
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
     }
 }
-*/
 
-impl<'a, B, S, K> Vector for SimpleSparseVector<'a, B, S, K>
+
+
+
+impl<'vec, 'a: 'vec, B, S, K> Vector<'vec> for SimpleSparseVector<'a, B, S, K>
     where B: 'static + Basis<KeyType=K>,
           K: 'static + Hash + Eq + Clone,
           S: 'static + CoefficientField
 {
     type BasisType = B;
-    type ScalarFieldType = S;
+    type KeyType = B::KeyType;
+    type ScalarType = S;
+    type RationalType = S::RationalType;
 
     fn new() -> Self {
         Self(HashMap::new(), PhantomData)
     }
 
-    fn from_key(key: impl Into<KeyType<Self>>) -> Self {
+    fn from_key(key: impl Into<Self::KeyType>) -> Self {
         Self::from_key_scalar(key, S::ONE)
     }
 
-    fn from_key_scalar(key: impl Into<KeyType<Self>>, scalar: impl Into<Self::ScalarFieldType>) -> Self {
+    fn from_key_scalar(key: impl Into<Self::KeyType>, scalar: impl Into<Self::ScalarType>) -> Self {
         let mut inner = HashMap::new();
         inner.insert(key.into(), scalar.into());
         Self(inner, PhantomData)
     }
 
-    fn from_iterator(iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) -> Self {
-        todo!()
+    fn from_iterator(iterator: impl IntoIterator<Item=(Self::KeyType, Self::ScalarType)>) -> Self {
+        let mut inner = HashMap::<K, S>::new();
+
+        for (key, val) in iterator.into_iter() {
+            inner.insert(key, val);
+        }
+        SimpleSparseVector::<B, S, K>(inner, PhantomData)
     }
 
     fn swap(&mut self, other: impl BorrowMut<Self>) {
@@ -112,23 +119,23 @@ impl<'a, B, S, K> Vector for SimpleSparseVector<'a, B, S, K>
         self.0.clear()
     }
 
-    fn get(&self, key: impl Borrow<KeyType<Self>>) -> Option<&Self::ScalarFieldType> {
+    fn get(&self, key: impl Borrow<Self::KeyType>) -> Option<&Self::ScalarType> {
         self.0.get(key.borrow())
     }
 
-    fn get_mut(&mut self, key: impl Borrow<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
+    fn get_mut(&mut self, key: impl Borrow<Self::KeyType>) -> Option<&mut Self::ScalarType> {
         self.0.get_mut(key.borrow())
     }
 
-    fn insert_single(&mut self, key: &KeyType<Self>, value: impl Into<Self::ScalarFieldType>) {
+    fn insert_single(&mut self, key: &Self::KeyType, value: impl Into<Self::ScalarType>) {
         self.0.insert(key.clone(), value.into());
     }
 
-    fn insert(&mut self, iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) {
+    fn insert(&mut self, iterator: impl IntoIterator<Item=(Self::KeyType, Self::ScalarType)>) {
         todo!()
     }
 
-    fn erase(&mut self, key: impl Borrow<KeyType<Self>>) {
+    fn erase(&mut self, key: impl Borrow<Self::KeyType>) {
         todo!()
     }
 
@@ -167,7 +174,7 @@ impl<'a, B, S, K> Vector for SimpleSparseVector<'a, B, S, K>
         self
     }
 
-    fn scalar_lmultiply_inplace(&mut self, scalar: impl Into<Self::ScalarFieldType>) -> &mut Self {
+    fn scalar_lmultiply_inplace(&mut self, scalar: impl Into<Self::ScalarType>) -> &mut Self {
         let s = scalar.into();
         if s == S::ZERO {
             self.0.clear();
@@ -181,7 +188,7 @@ impl<'a, B, S, K> Vector for SimpleSparseVector<'a, B, S, K>
         self
     }
 
-    fn scalar_rdivide_inplace(&mut self, rational: impl Into<RationalType<Self>>) -> &mut Self {
+    fn scalar_rdivide_inplace(&mut self, rational: impl Into<Self::RationalType>) -> &mut Self {
         let r = rational.into();
 
         self.0.iter_mut().for_each(move |(_, v)| {
@@ -193,10 +200,9 @@ impl<'a, B, S, K> Vector for SimpleSparseVector<'a, B, S, K>
 }
 
 
-
 #[cfg(test)]
 mod tests {
-
+/*
     use super::*;
     use crate::free_tensor::{TensorBasis, TensorKey};
 
@@ -212,5 +218,35 @@ mod tests {
 
 
     }
+
+
+
+    #[test]
+    fn test_iterator()
+    {
+        let vec = Vect::from_iterator(vec![
+            (TKey::new(), 1.0),
+            (TKey::from_letter(1), 2.0),
+            (TKey::from_letter(2), 3.0)
+        ]);
+
+        let mut itr = vec.into_iter();
+
+        let itm = itr.next().unwrap();
+        assert_eq!(itm.key(), TKey::new());
+        assert_eq!(itm.value(), 1.0);
+
+        let itm = itr.next().unwrap();
+        assert_eq!(itm.key(), TKey::from_letter(1));
+        assert_eq!(itm.value(), 2.0);
+
+        let itm = itr.next().unwrap();
+        assert_eq!(itm.key(), TKey::from_letter(2));
+        assert_eq!(itm.value(), 3.0);
+
+        assert_eq!(itr.next(), None);
+
+    }
+*/
 
 }

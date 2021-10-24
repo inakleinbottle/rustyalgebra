@@ -10,12 +10,12 @@ use std::slice::{SliceIndex, Iter as SliceIter};
 use std::iter::{Zip, IntoIterator};
 use std::ops::Range;
 
-use crate::vector::{Vector, KeyType, RationalType, /*VectorIter, VectorIterItem,*/ ScalarField};
+use crate::vector::{Vector, VectorIteratorItem, IntoVecIter, IntoVectorIterator};
 use crate::coefficients::{CoefficientField};
 use crate::basis::{OrderedBasis, OrderedBasisWithDegree};
 use crate::{DimensionType, DegreeType};
 use crate::vector::{VectorWithDegree, DenseVector};
-
+use crate::vector::traits::ResizeableDenseVector;
 
 
 #[derive(Debug, PartialEq)]
@@ -28,7 +28,7 @@ enum SimpleDenseVectorData<'a, S: CoefficientField>
 use SimpleDenseVectorData::*;
 
 
-use crate::vector::traits::ResizeableDenseVector;
+
 
 
 
@@ -155,59 +155,27 @@ impl<'a, B: OrderedBasis, S: CoefficientField> SimpleDenseVector<'a, B, S> {
 
 }
 
-/*
-pub struct SimpleDenseVectorIterator<'a, B, S>
-    where B: OrderedBasis, S: CoefficientField
-{
-    impl_: Zip<B::KeyIterator, SliceIter<'a, S>>
-}
 
 
-impl<'a, B, S> Iterator for SimpleDenseVectorIterator<'a, B, S>
-    where B: OrderedBasis, S: CoefficientField
-{
-    type Item = VectorIterItem<'a, B::KeyType, S>;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.impl_.next().map(Into::<Self::Item>::into)
-    }
-}
-
-impl<'a, B, S> From<SliceIter<'a, S>> for SimpleDenseVectorIterator<'a, B, S>
-    where B: OrderedBasis, S: CoefficientField
-{
-    fn from(arg: SliceIter<'a, S>) -> Self {
-        SimpleDenseVectorIterator { impl_: B::iter_keys().zip(arg) }
-    }
-}
-
-impl<'a, B, S> From<&'a [S]> for SimpleDenseVectorIterator<'a, B, S>
-    where B: OrderedBasis, S: CoefficientField
-{
-    fn from(arg: &'a [S]) -> Self {
-        SimpleDenseVectorIterator { impl_: B::iter_keys().zip(arg.into_iter()) }
-    }
-}
-
-*/
-
-
-impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
+impl<'vec, 'a: 'vec, B, S> Vector<'vec> for SimpleDenseVector<'a, B, S>
     where B: 'static + OrderedBasis,
           S: 'static + CoefficientField
 {
     type BasisType = B;
-    type ScalarFieldType = S;
+    type KeyType = B::KeyType;
+    type ScalarType = S;
+    type RationalType = S::RationalType;
 
     fn new() -> Self {
         Self::new()
     }
 
-    fn from_key(key: impl Into<KeyType<Self>>) -> Self {
-        Self::from_key_scalar(key, Self::ScalarFieldType::ONE)
+    fn from_key(key: impl Into<Self::KeyType>) -> Self {
+        Self::from_key_scalar(key, Self::ScalarType::ONE)
     }
 
-    fn from_key_scalar(key: impl Into<KeyType<Self>>, scalar: impl Into<Self::ScalarFieldType>) -> Self {
+    fn from_key_scalar(key: impl Into<Self::KeyType>, scalar: impl Into<Self::ScalarType>) -> Self {
         let k = key.into();
         let size = Self::BasisType::vector_dimension_for_key(&k);
         let mut new_vect = Self::from_dimension(size);
@@ -220,8 +188,8 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         new_vect
     }
 
-    fn from_iterator(iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) -> Self {
-        let mut vec: Vec<(DimensionType, Self::ScalarFieldType)> = iterator.into_iter()
+    fn from_iterator(iterator: impl IntoIterator<Item=(Self::KeyType, Self::ScalarType)>) -> Self {
+        let mut vec: Vec<(DimensionType, Self::ScalarType)> = iterator.into_iter()
             .map(|(k, s)| { (Self::BasisType::key_to_index(&k), s) })
             .collect();
 
@@ -237,7 +205,7 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         // We have just created a vector large enough to accomodate all these indices.
         unsafe {
             for (i, v) in vec.into_iter() {
-                Self::ScalarFieldType::add_inplace(result.as_mut_slice().get_unchecked_mut(i), &v);
+                Self::ScalarType::add_inplace(result.as_mut_slice().get_unchecked_mut(i), &v);
             }
         }
 
@@ -261,26 +229,26 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         };
     }
 
-    fn get(&self, key: impl Borrow<KeyType<Self>>) -> Option<&Self::ScalarFieldType> {
+    fn get(&self, key: impl Borrow<Self::KeyType>) -> Option<&Self::ScalarType> {
         self.as_slice().get(B::key_to_index(key.borrow()))
     }
 
-    fn get_mut(&mut self, key: impl Borrow<KeyType<Self>>) -> Option<&mut Self::ScalarFieldType> {
+    fn get_mut(&mut self, key: impl Borrow<Self::KeyType>) -> Option<&mut Self::ScalarType> {
         self.as_mut_slice().get_mut(B::key_to_index(key.borrow()))
     }
 
-    fn insert_single(&mut self, key: &KeyType<Self>, value: impl Into<Self::ScalarFieldType>)
+    fn insert_single(&mut self, key: &Self::KeyType, value: impl Into<Self::ScalarType>)
     {
         let idx = B::key_to_index(key);
 
 
     }
 
-    fn insert(&mut self, iterator: impl IntoIterator<Item=(KeyType<Self>, Self::ScalarFieldType)>) {
+    fn insert(&mut self, iterator: impl IntoIterator<Item=(Self::KeyType, Self::ScalarType)>) {
         todo!()
     }
 
-    fn erase(&mut self, key: impl Borrow<KeyType<Self>>)
+    fn erase(&mut self, key: impl Borrow<Self::KeyType>)
     {
         if let Some(v) = self.get_mut(key) {
             *v = S::ZERO;
@@ -289,7 +257,7 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
 
     fn uminus_inplace(&mut self) -> &mut Self {
         for val in self.as_mut_slice() {
-            *val = Self::ScalarFieldType::uminus(val);
+            *val = Self::ScalarType::uminus(val);
         }
         self
     }
@@ -306,7 +274,7 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         }
 
         for (lhs, rhs) in self.as_mut_slice().iter_mut().zip(lhs_vec.as_slice()) {
-            Self::ScalarFieldType::add_inplace(lhs, rhs);
+            Self::ScalarType::add_inplace(lhs, rhs);
         }
 
         self
@@ -320,13 +288,13 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         }
 
         for (lhs, rhs) in self.as_mut_slice().iter_mut().zip(lhs_vec.as_slice()) {
-            Self::ScalarFieldType::sub_inplace(lhs, rhs);
+            Self::ScalarType::sub_inplace(lhs, rhs);
         }
 
         self
     }
 
-    fn scalar_lmultiply_inplace(&mut self, scalar: impl Into<Self::ScalarFieldType>) -> &mut Self {
+    fn scalar_lmultiply_inplace(&mut self, scalar: impl Into<Self::ScalarType>) -> &mut Self {
         let val = scalar.into();
 
         if let Borrowed(v) = self.0 {
@@ -334,29 +302,30 @@ impl<'a, B, S> Vector for SimpleDenseVector<'a, B, S>
         }
 
         for lhs in self.as_mut_slice() {
-            Self::ScalarFieldType::mul_inplace(lhs, &val);
+            Self::ScalarType::mul_inplace(lhs, &val);
         }
 
         self
     }
 
-    fn scalar_rdivide_inplace(&mut self, rational: impl Into<RationalType<Self>>) -> &mut Self {
+    fn scalar_rdivide_inplace(&mut self, rational: impl Into<Self::RationalType>) -> &mut Self {
         let val = rational.into();
 
         for lhs in self.as_mut_slice() {
-            Self::ScalarFieldType::div_inplace(lhs, &val);
+            Self::ScalarType::div_inplace(lhs, &val);
         }
 
         self
     }
+
 }
 
 
-impl<'a, B, S> DenseVector for SimpleDenseVector<'a, B, S>
+impl<'vec, 'a: 'vec, B, S> DenseVector<'vec> for SimpleDenseVector<'a, B, S>
     where B: 'static + OrderedBasis,
           S: 'static + CoefficientField
 {
-    fn as_slice(&self) -> &[Self::ScalarFieldType] {
+    fn as_slice(&self) -> &[Self::ScalarType] {
         match &self.0 {
             Owned(v) => v,
             Borrowed(v) => v,
@@ -364,7 +333,7 @@ impl<'a, B, S> DenseVector for SimpleDenseVector<'a, B, S>
         }
     }
 
-    fn as_mut_slice(&mut self) -> &mut [Self::ScalarFieldType] {
+    fn as_mut_slice(&mut self) -> &mut [Self::ScalarType] {
         if let Borrowed(v) = self.0 {
             self.0 = Owned(v.to_vec());
         }
@@ -377,7 +346,7 @@ impl<'a, B, S> DenseVector for SimpleDenseVector<'a, B, S>
     }
 }
 
-impl<'a, B, S> ResizeableDenseVector for SimpleDenseVector<'a, B, S>
+impl<'vec, 'a: 'vec, B, S> ResizeableDenseVector<'vec> for SimpleDenseVector<'a, B, S>
     where B: 'static + OrderedBasis,
           S: 'static + CoefficientField
 {
@@ -391,7 +360,7 @@ impl<'a, B, S> ResizeableDenseVector for SimpleDenseVector<'a, B, S>
 }
 
 
-impl<'a, B, S> VectorWithDegree for SimpleDenseVector<'a, B, S>
+impl<'vec, 'a: 'vec, B, S> VectorWithDegree<'vec> for SimpleDenseVector<'a, B, S>
     where B: 'static + OrderedBasisWithDegree,
           S: 'static + CoefficientField
 {

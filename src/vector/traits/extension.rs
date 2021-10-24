@@ -1,18 +1,18 @@
 use std::borrow::Borrow;
 
-use crate::vector::{Vector, KeyType, ScalarField, RationalType};
+use crate::vector::{Vector};
 use crate::coefficients::CoefficientField;
 
-pub trait VectorKeyExt : Vector {
+pub trait VectorKeyExt<'vec> : Vector<'vec> {
 
     fn add_scalar_multiply(
         &mut self,
-        key: impl Borrow<KeyType<Self>>,
-        val: impl Into<ScalarField<Self>>
+        key: impl Borrow<Self::KeyType>,
+        val: impl Into<Self::ScalarType>
     ) -> &mut Self
     {
         if let Some(v) = self.get_mut(key.borrow()) {
-            <ScalarField<Self> as CoefficientField>::add_inplace(v,  &val.into());
+            <Self::ScalarType as CoefficientField>::add_inplace(v,  &val.into());
         } else {
             self.insert_single(key.borrow(), val.into());
         }
@@ -21,27 +21,27 @@ pub trait VectorKeyExt : Vector {
 
     fn sub_scalar_multiply(
         &mut self,
-        key: impl Borrow<KeyType<Self>>,
-        val: impl Into<ScalarField<Self>>
+        key: impl Borrow<Self::KeyType>,
+        val: impl Into<Self::ScalarType>
     ) -> &mut Self
     {
         if let Some(v) = self.get_mut(key.borrow()) {
-            <ScalarField<Self> as CoefficientField>::sub_inplace(v, &val.into());
+            <Self::ScalarType as CoefficientField>::sub_inplace(v, &val.into());
         } else {
-            self.insert_single(key.borrow(), <ScalarField<Self> as CoefficientField>::uminus(&val.into()));
+            self.insert_single(key.borrow(), <Self::ScalarType as CoefficientField>::uminus(&val.into()));
         }
         self
     }
 
     fn add_scalar_divide(
         &mut self,
-        key: impl Borrow<KeyType<Self>>,
-        val: impl Into<<ScalarField<Self> as CoefficientField>::RationalType>
+        key: impl Borrow<Self::KeyType>,
+        val: impl Into<<Self::ScalarType as CoefficientField>::RationalType>
     ) -> &mut Self
     {
-        let sca = <ScalarField<Self> as CoefficientField>::div(&ScalarField::<Self>::ONE, &val.into());
+        let sca = <Self::ScalarType as CoefficientField>::div(&Self::ScalarType::ONE, &val.into());
         if let Some(v) = self.get_mut(key.borrow()) {
-            <ScalarField<Self> as CoefficientField>::add_inplace(v, &sca);
+            <Self::ScalarType as CoefficientField>::add_inplace(v, &sca);
         } else {
             self.insert_single(key.borrow().clone(), sca);
         }
@@ -51,13 +51,13 @@ pub trait VectorKeyExt : Vector {
 
     fn sub_scalar_divide(
         &mut self,
-        key: impl Borrow<KeyType<Self>>,
-        val: impl Into<<ScalarField<Self> as CoefficientField>::RationalType>
+        key: impl Borrow<Self::KeyType>,
+        val: impl Into<<Self::ScalarType as CoefficientField>::RationalType>
     ) -> &mut Self
     {
-        let sca = <ScalarField<Self> as CoefficientField>::div(&ScalarField::<Self>::MONE, &val.into());
+        let sca = <Self::ScalarType as CoefficientField>::div(&Self::ScalarType::MONE, &val.into());
         if let Some(v) = self.get_mut(key.borrow()) {
-            <ScalarField<Self> as CoefficientField>::sub_inplace(v, &sca);
+            <Self::ScalarType as CoefficientField>::sub_inplace(v, &sca);
         } else {
             self.insert_single(key.borrow().clone(), sca);
         }
@@ -67,22 +67,22 @@ pub trait VectorKeyExt : Vector {
 
 
 
-impl<'a, V: Vector> VectorKeyExt for V {}
+impl<'vec, V: Vector<'vec>> VectorKeyExt<'vec> for V {}
 
 
 
 
-pub trait CrossTypeVectorExt<V> : Vector
-    where V: Vector<BasisType=Self::BasisType, ScalarFieldType=Self::ScalarFieldType>
+pub trait CrossTypeVectorExt<'vec1, 'vec2, V> : Vector<'vec1>
+    where V: Vector<'vec2, BasisType=Self::BasisType, ScalarType=Self::ScalarType>
 {
 
     fn add_inplace(&mut self, other: &V) -> &mut Self;
     fn sub_inplace(&mut self, other: &V) -> &mut Self;
 
-    fn add_scalar_mul(&mut self, other: &V, s: ScalarField<Self>) -> &mut Self;
-    fn sub_scalar_mul(&mut self, other: &V, s: ScalarField<Self>) -> &mut Self;
-    fn add_scalar_div(&mut self, other: &V, s: RationalType<Self>) -> &mut Self;
-    fn sub_scalar_div(&mut self, other: &V, s: RationalType<Self>) -> &mut Self;
+    fn add_scalar_mul(&mut self, other: &V, s: Self::ScalarType) -> &mut Self;
+    fn sub_scalar_mul(&mut self, other: &V, s: Self::ScalarType) -> &mut Self;
+    fn add_scalar_div(&mut self, other: &V, s: Self::RationalType) -> &mut Self;
+    fn sub_scalar_div(&mut self, other: &V, s: Self::RationalType) -> &mut Self;
 
 }
 
@@ -113,7 +113,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
         self
     }
 
-    fn add_scalar_mul(&mut self, other: &V, s: ScalarField<Self>) -> &mut Self {
+    fn add_scalar_mul(&mut self, other: &V, s: Self::ScalarType) -> &mut Self {
         for (k, v) in other.iter_item() {
             let tmp = ScalarField::<U>::mul(&s, v);
             if let Some(curr) = self.get_mut(k) {
@@ -125,7 +125,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
         self
     }
 
-    fn sub_scalar_mul(&mut self, other: &V, s: ScalarField<Self>) -> &mut Self {
+    fn sub_scalar_mul(&mut self, other: &V, s: Self::ScalarType) -> &mut Self {
         for (k, v) in other.iter_item() {
             let tmp = ScalarField::<U>::mul(&s, v);
             if let Some(curr) = self.get_mut(k) {
@@ -137,7 +137,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
         self
     }
 
-    fn add_scalar_div(&mut self, other: &V, s: RationalType<Self>) -> &mut Self {
+    fn add_scalar_div(&mut self, other: &V, s: Self::RationalType) -> &mut Self {
         for (k, v) in other.iter_item() {
             let tmp = ScalarField::<U>::div( v, &s);
             if let Some(curr) = self.get_mut(k) {
@@ -149,7 +149,7 @@ impl<U, V> CrossTypeVectorExt<V> for U
         self
     }
 
-    fn sub_scalar_div(&mut self, other: &V, s: RationalType<Self>) -> &mut Self {
+    fn sub_scalar_div(&mut self, other: &V, s: Self::RationalType) -> &mut Self {
         for (k, v) in other.iter_item() {
             let tmp = ScalarField::<U>::div( v, &s);
             if let Some(curr) = self.get_mut(k) {
