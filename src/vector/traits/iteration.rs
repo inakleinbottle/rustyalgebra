@@ -9,48 +9,40 @@ use crate::coefficients::CoefficientField;
 use crate::vector::Vector;
 
 
-pub trait VectorIteratorItem<K, S>
+pub trait VectorIteratorItem<'vec, K, S>
 {
-    type KeyItem: Deref<Target=K>;
-    type ValueItem: Deref<Target=S>;
+    type KeyItem: 'vec + Deref<Target=K>;
+    type ValueItem: 'vec + Deref<Target=S>;
 
     fn key(&self) -> Self::KeyItem;
     fn value(&self) -> Self::ValueItem;
 }
 
 
-pub trait VectorIteratorMutItem<K, S>
+pub trait VectorIteratorMutItem<'vec, K, S>
 {
-    type KeyItem: Deref<Target=K>;
-    type ValueItem: DerefMut<Target=S>;
+    type KeyItem: 'vec + Deref<Target=K>;
+    type ValueItem: 'vec + DerefMut<Target=S>;
 
     fn key(&self) -> Self::KeyItem;
     fn value(&self) -> Self::ValueItem;
 }
 
 
-pub trait VectorIterator<B, S> : Iterator
-    where B: Basis, S: CoefficientField
-{}
-
-
-pub trait IntoVecIter<K, S> : IntoIterator
-    where <Self as IntoIterator>::Item: VectorIteratorItem<K, S>
-{}
-
-
-pub trait IntoVecMutIter<K, S> : IntoIterator
-    where <Self as IntoIterator>::Item: VectorIteratorMutItem<K, S>
-{}
 
 type Item<I> = <I as IntoIterator>::Item;
 
-pub trait IntoVectorIterator<K, S>
+pub trait IntoVectorIterator<'vec, K, S>
+    where Self: 'vec,
+          &'vec Self: IntoIterator,
+          &'vec mut Self: IntoIterator,
+          Item<&'vec Self>: VectorIteratorItem<'vec, K, S>,
+          Item<&'vec mut Self>: VectorIteratorMutItem<'vec, K, S>
 {}
 
-impl<'a, T: 'a, K, S> IntoVectorIterator<K, S> for T
-    where &'a T: IntoIterator,
-          //&'_ mut T: IntoIterator,
-          Item<&'a T>: VectorIteratorItem<K, S>//,
-          //Item<&'_ mut T>: VectorIteratorMutItem<K, S>
+impl<'vec, T: 'vec, K, S> IntoVectorIterator<'vec, K, S> for T
+    where &'vec T: IntoIterator,
+          &'vec mut T: IntoIterator,
+          Item<&'vec T>: VectorIteratorItem<'vec, K, S>,
+          Item<&'vec mut T>: VectorIteratorMutItem<'vec, K, S>
 {}

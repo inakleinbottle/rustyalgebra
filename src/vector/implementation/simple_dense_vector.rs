@@ -10,7 +10,7 @@ use std::slice::{SliceIndex, Iter as SliceIter};
 use std::iter::{Zip, IntoIterator};
 use std::ops::Range;
 
-use crate::vector::{Vector, VectorIteratorItem, IntoVecIter, IntoVectorIterator};
+use crate::vector::{Vector, VectorIteratorItem};
 use crate::coefficients::{CoefficientField};
 use crate::basis::{OrderedBasis, OrderedBasisWithDegree};
 use crate::{DimensionType, DegreeType};

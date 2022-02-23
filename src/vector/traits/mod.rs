@@ -10,7 +10,7 @@ pub use extension::VectorKeyExt;
 pub use degree_vector::VectorWithDegree;
 //pub use iteration::{VectorIterItem, VectorIter};
 
-pub use iteration::{VectorIteratorItem, VectorIteratorMutItem, IntoVecIter, IntoVecMutIter, IntoVectorIterator};
+pub use iteration::{VectorIteratorItem, VectorIteratorMutItem, IntoVectorIterator};
 
 mod as_vec;
 mod dense_vector;

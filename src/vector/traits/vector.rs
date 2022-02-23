@@ -6,7 +6,6 @@ use std::borrow::{Borrow, BorrowMut};
 use crate::basis::{Basis};
 use crate::coefficients::CoefficientField;
 //use super::iteration::VectorIterItem;
-use super::IntoVectorIterator;
 //use super::VectorIter;
 
 

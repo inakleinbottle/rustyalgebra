@@ -6,7 +6,7 @@ use std::iter::IntoIterator;
 
 use crate::basis::{Basis};
 use crate::coefficients::CoefficientField;
-use crate::vector::{Vector, VectorIteratorItem, VectorIteratorMutItem, IntoVecMutIter};
+use crate::vector::{Vector, VectorIteratorItem, VectorIteratorMutItem};
 use std::borrow::{BorrowMut, Borrow};
 use std::hash::Hash;
 
@@ -42,10 +42,10 @@ impl<'a, B, S, K> PartialEq for SimpleSparseVector<'a, B, S, K>
 
 
 
-impl<'a, K: 'a, S: 'a> VectorIteratorItem<K, S> for (&'a K, &'a S)
+impl<'vec, K: 'vec, S: 'vec> VectorIteratorItem<'vec, K, S> for (&'vec K, &'vec S)
 {
-    type KeyItem = &'a K;
-    type ValueItem = &'a S;
+    type KeyItem = &'vec K;
+    type ValueItem = &'vec S;
 
     fn key(&self) -> Self::KeyItem {
         &*self.0
@@ -58,13 +58,13 @@ impl<'a, K: 'a, S: 'a> VectorIteratorItem<K, S> for (&'a K, &'a S)
 
 
 
-impl<'a, B, S, K> IntoIterator for &'a SimpleSparseVector<'a, B, S, K>
+impl<'vec, 'a: 'vec, B: 'vec, S: 'vec, K: 'vec> IntoIterator for &'vec SimpleSparseVector<'a, B, S, K>
     where B: Basis<KeyType=K>,
           K: 'a + Hash + Eq + Clone,
           S: 'a + CoefficientField
 {
-    type Item = (&'a K, &'a S);
-    type IntoIter = HashMapIter<'a, K, S>;
+    type Item = (&'vec K, &'vec S);
+    type IntoIter = HashMapIter<'vec, K, S>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter()

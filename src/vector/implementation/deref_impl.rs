@@ -1,14 +1,14 @@
 
 use std::borrow::{Borrow, BorrowMut};
 use std::ops::{Deref, DerefMut};
-
+use crate::vector::traits::IntoVectorIterator;
 use crate::vector::*;
 
 
 
 impl<'vec, U, V> Vector<'vec> for V
-    where V: 'vec + Deref<Target=U> + DerefMut<Target=U> + From<U> + PartialEq
-            + IntoVectorIterator<U::KeyType, U::ScalarType>,
+    where V: 'vec + Deref<Target=U> + DerefMut<Target=U> + From<U> + PartialEq,
+          //  + IntoVectorIterator<'vec, U::KeyType, U::ScalarType>,
           U: Vector<'vec>
 {
     type BasisType = U::BasisType;
